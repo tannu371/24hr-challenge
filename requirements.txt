@@ -1,0 +1,7 @@
+numpy>=2.0
+scipy>=1.13
+matplotlib>=3.8
+cvxpy>=1.5
+qiskit>=2.0
+qiskit-aer>=0.15
+qiskit-algorithms>=0.3

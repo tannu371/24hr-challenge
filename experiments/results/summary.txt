@@ -1,0 +1,16 @@
+method                         cost   K     ret     vol #corr  #chg feasK feasR  time(s)   #eval
+------------------------------------------------------------------------------------------------
+brute_force_K                0.6598   4   0.124   0.137     0     2  True  True    0.002     495
+brute_force_full             0.6598   4   0.124   0.137     0     2  True  True    0.019    4096
+greedy                       0.6598   4   0.124   0.137     0     2  True  True    0.000      43
+sim_annealing_flip           2.4705   4   0.134   0.142     2     6  True  True    0.062   10001
+sim_annealing_swap           0.6598   4   0.124   0.137     0     2  True  True    0.100   10001
+markowitz_relaxed_topK       1.3555   4   0.144   0.125     1     4  True  True    0.017       1
+QAOA_p1                      0.6598   4   0.124   0.137     0     2  True  True   18.797    1035
+QAOA_p2                      1.6014   4   0.128   0.133     2     2  True  True   49.398    1558
+QAOA_p3                      2.7362   4   0.071   0.143     2     6  True  True  104.551    2400
+
+QAOA diagnostics:
+  QAOA_p1: P(opt)=0.001  E*=6.9826
+  QAOA_p2: P(opt)=0.000  E*=14.4097
+  QAOA_p3: P(opt)=0.000  E*=14.7824
