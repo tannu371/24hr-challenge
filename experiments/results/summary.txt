@@ -1,16 +1,16 @@
-method                         cost   K     ret     vol #corr  #chg feasK feasR  time(s)   #eval
-------------------------------------------------------------------------------------------------
-brute_force_K                0.6598   4   0.124   0.137     0     2  True  True    0.002     495
-brute_force_full             0.6598   4   0.124   0.137     0     2  True  True    0.019    4096
-greedy                       0.6598   4   0.124   0.137     0     2  True  True    0.000      43
-sim_annealing_flip           2.4705   4   0.134   0.142     2     6  True  True    0.062   10001
-sim_annealing_swap           0.6598   4   0.124   0.137     0     2  True  True    0.100   10001
-markowitz_relaxed_topK       1.3555   4   0.144   0.125     1     4  True  True    0.017       1
-QAOA_p1                      0.6598   4   0.124   0.137     0     2  True  True   18.797    1035
-QAOA_p2                      1.6014   4   0.128   0.133     2     2  True  True   49.398    1558
-QAOA_p3                      2.7362   4   0.071   0.143     2     6  True  True  104.551    2400
+method                         cost   K     ret     vol      V̂ feasK feasR  time(s)   #eval
+--------------------------------------------------------------------------------------------
+brute_force_K               -0.0713   4   0.122   0.143  0.0100  True  True    0.002     495
+brute_force_full            -0.0713   4   0.122   0.143  0.0100  True  True    0.014    4096
+greedy                      -0.0713   4   0.122   0.143  0.0100  True  True    0.000      43
+sim_annealing_flip           0.0248   4   0.087   0.157  0.0098  True  True    0.048   10001
+sim_annealing_swap          -0.0713   4   0.122   0.143  0.0100  True  True    0.085   10001
+markowitz_relaxed_topK      -0.0037   4   0.144   0.125  0.0079  True  True    0.012       1
+QAOA_p1                     -0.0713   4   0.122   0.143  0.0100  True  True    9.216     778
+QAOA_p2                      0.0671   4   0.096   0.158  0.0088  True  True   30.212    1465
+QAOA_p3                      0.0579   4   0.058   0.161  0.0106  True False   55.840    1904
 
 QAOA diagnostics:
-  QAOA_p1: P(opt)=0.001  E*=6.9826
-  QAOA_p2: P(opt)=0.000  E*=14.4097
-  QAOA_p3: P(opt)=0.000  E*=14.7824
+  QAOA_p1: P(opt)=0.001  E*=4.4345
+  QAOA_p2: P(opt)=0.001  E*=3.2011
+  QAOA_p3: P(opt)=0.001  E*=3.6816

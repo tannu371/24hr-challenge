@@ -25,8 +25,7 @@ class ComparisonRow:
     K: int
     port_return: float
     port_vol: float
-    n_corr_pairs: int
-    n_changes: int
+    diag_variance_proxy: float        # V̂(x) — deck term ⑤ scaled diag-var
     feasible_card: bool
     feasible_risk: bool
     wall_time: float
@@ -44,8 +43,7 @@ def summarise(problem: PortfolioProblem, results: List) -> List[ComparisonRow]:
                 K=m["K"],
                 port_return=m["port_return"],
                 port_vol=m["port_vol"],
-                n_corr_pairs=m["n_corr_pairs"],
-                n_changes=m["n_changes"],
+                diag_variance_proxy=m["diag_variance_proxy"],
                 feasible_card=m["feasible_card"],
                 feasible_risk=m["feasible_risk"],
                 wall_time=r.wall_time,
@@ -59,14 +57,14 @@ def format_table(rows: List[ComparisonRow]) -> str:
     """Plain-text comparison table."""
     header = (
         f"{'method':<25s} {'cost':>9s} {'K':>3s} {'ret':>7s} {'vol':>7s} "
-        f"{'#corr':>5s} {'#chg':>5s} {'feasK':>5s} {'feasR':>5s} "
+        f"{'V̂':>7s} {'feasK':>5s} {'feasR':>5s} "
         f"{'time(s)':>8s} {'#eval':>7s}"
     )
     lines = [header, "-" * len(header)]
     for r in rows:
         lines.append(
             f"{r.name:<25s} {r.cost:9.4f} {r.K:3d} {r.port_return:7.3f} "
-            f"{r.port_vol:7.3f} {r.n_corr_pairs:5d} {r.n_changes:5d} "
+            f"{r.port_vol:7.3f} {r.diag_variance_proxy:7.4f} "
             f"{str(r.feasible_card):>5s} {str(r.feasible_risk):>5s} "
             f"{r.wall_time:8.3f} {r.n_evaluations:7d}"
         )
