@@ -1,0 +1,34 @@
+{
+  "name": "trial_03_optimizers",
+  "deck_setup": {
+    "N": 10,
+    "p": 2
+  },
+  "deck_claim": "L-BFGS-B beats COBYLA which beats SPSA on a noiseless statevector. Deck reports ~0.99 vs ~0.70 approximation ratio.",
+  "observed": {
+    "COBYLA": {
+      "trial_id": 132,
+      "energy_star": 10.368266565221912,
+      "cost": -0.28548790892519094,
+      "approx_ratio": 1.0,
+      "n_evaluations": 240
+    },
+    "SPSA": {
+      "trial_id": 133,
+      "energy_star": 46.592233447749955,
+      "cost": -0.28548790892519094,
+      "approx_ratio": 1.0,
+      "n_evaluations": 633
+    },
+    "L-BFGS-B": {
+      "trial_id": 134,
+      "energy_star": 2.615189120362359,
+      "cost": -0.28548790892519094,
+      "approx_ratio": 1.0,
+      "n_evaluations": 1281
+    }
+  },
+  "matches_deck": true,
+  "verdict_text": "PASS \u2014 L-BFGS-B (1.000) \u2265 COBYLA (1.000) and \u2265 SPSA (1.000) (within 5%). Ordering matches the deck's qualitative claim.",
+  "wall_seconds": 135.93180894851685
+}

@@ -54,23 +54,23 @@ def main_experiment():
     weights = ObjectiveWeights(
         lam_return=1.0,
         lam_variance=2.5,
-        lam_diversification=0.5,
-        lam_transaction=0.2,
-        lam_cardinality=5.0,
-        rho_threshold=0.5,
+        P_K=5.0,
+        P_S=0.0,
+        P_R=0.5,
+        theta_risk=0.04,
     )
-    # A non-trivial previous portfolio so the transaction-cost term bites.
-    x_prev = np.zeros(universe.n_assets, dtype=int)
-    x_prev[[0, 1, 5, 9]] = 1
+    # Linear transaction cost on holding each asset (deck term ⑥).
+    transaction_costs = np.zeros(universe.n_assets, dtype=float)
+    transaction_costs[[0, 1, 5, 9]] = 0.05
     problem = PortfolioProblem(
         universe=universe, K_target=4, weights=weights,
-        sigma_max=0.16, x_prev=x_prev,
+        sigma_max=0.16, transaction_costs=transaction_costs,
     )
 
     print(f"  expected returns mu = {np.round(universe.mu, 3)}")
     print(f"  asset vols           = {np.round(universe.annual_vol(), 3)}")
     print(f"  sectors              = {universe.sectors}")
-    print(f"  prior portfolio      = {x_prev}")
+    print(f"  transaction costs    = {transaction_costs}")
     print(f"  weights              = {weights}")
     print(f"  hard sigma_max        = {problem.sigma_max}")
 

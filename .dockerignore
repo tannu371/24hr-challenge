@@ -1,0 +1,12 @@
+.git/
+.venv/
+**/__pycache__/
+**/*.pyc
+**/node_modules/
+**/.next/
+**/dist/
+**/.DS_Store
+.idea/
+.vscode/
+backend/.env
+backend/trials.db

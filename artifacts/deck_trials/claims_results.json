@@ -1,0 +1,257 @@
+[
+  {
+    "slide": 19,
+    "title": "Approximation ratios across N \u2208 {8, 12, 16}",
+    "rows": [
+      {
+        "N": 8,
+        "K": 4,
+        "method": "brute",
+        "cost": -0.20758029546519197,
+        "approx_ratio": 1.0,
+        "trial_id": 244
+      },
+      {
+        "N": 8,
+        "K": 4,
+        "method": "SA",
+        "cost": -0.20758029546519197,
+        "approx_ratio": 1.0,
+        "trial_id": 245
+      },
+      {
+        "N": 8,
+        "K": 4,
+        "method": "CVX_round",
+        "cost": -0.20758029546519197,
+        "approx_ratio": 1.0,
+        "trial_id": 246
+      },
+      {
+        "N": 8,
+        "K": 4,
+        "method": "QAOA_P1_X",
+        "cost": -0.20758029546519197,
+        "approx_ratio": 1.0,
+        "trial_id": 247
+      },
+      {
+        "N": 8,
+        "K": 4,
+        "method": "QAOA_P3_X",
+        "cost": -0.20758029546519197,
+        "approx_ratio": 1.0,
+        "trial_id": 248
+      },
+      {
+        "N": 12,
+        "K": 5,
+        "method": "brute",
+        "cost": -0.35754291424811413,
+        "approx_ratio": 1.0,
+        "trial_id": 249
+      },
+      {
+        "N": 12,
+        "K": 5,
+        "method": "SA",
+        "cost": -0.35754291424811413,
+        "approx_ratio": 1.0,
+        "trial_id": 250
+      },
+      {
+        "N": 12,
+        "K": 5,
+        "method": "CVX_round",
+        "cost": -0.3390436494267419,
+        "approx_ratio": 0.9482600155556857,
+        "trial_id": 251
+      },
+      {
+        "N": 12,
+        "K": 5,
+        "method": "QAOA_P1_X",
+        "cost": -0.35754291424811413,
+        "approx_ratio": 1.0,
+        "trial_id": 252
+      },
+      {
+        "N": 12,
+        "K": 5,
+        "method": "QAOA_P3_X",
+        "cost": -0.35754291424811413,
+        "approx_ratio": 1.0,
+        "trial_id": 253
+      }
+    ],
+    "findings": [
+      {
+        "N": 8,
+        "K": 4,
+        "ratios": {
+          "SA": 1.0,
+          "CVX_round": 1.0,
+          "QAOA_P1_X": 1.0,
+          "QAOA_P3_X": 1.0
+        }
+      },
+      {
+        "N": 12,
+        "K": 5,
+        "ratios": {
+          "SA": 1.0,
+          "CVX_round": 0.9482600155556857,
+          "QAOA_P1_X": 1.0,
+          "QAOA_P3_X": 1.0
+        }
+      }
+    ],
+    "checks": {
+      "SA approximately matches brute (\u22645% gap)": true,
+      "CVX+round within wide band [0.5, 1.05]": true,
+      "QAOA P=3 XY-Dicke \u2265 QAOA P=1 X-mixer": true,
+      "QAOA never beats SA": true
+    }
+  },
+  {
+    "slide": 20,
+    "title": "Convergence (SA flips, QAOA evaluations)",
+    "sa_progress": [
+      {
+        "flips": 300,
+        "cost": -0.35754291424811413,
+        "approx_ratio": 1.0
+      },
+      {
+        "flips": 600,
+        "cost": -0.35754291424811413,
+        "approx_ratio": 1.0
+      },
+      {
+        "flips": 1500,
+        "cost": -0.35754291424811413,
+        "approx_ratio": 1.0
+      },
+      {
+        "flips": 3000,
+        "cost": -0.35754291424811413,
+        "approx_ratio": 1.0
+      },
+      {
+        "flips": 6000,
+        "cost": -0.35754291424811413,
+        "approx_ratio": 1.0
+      },
+      {
+        "flips": 12000,
+        "cost": -0.35754291424811413,
+        "approx_ratio": 1.0
+      },
+      {
+        "flips": 24000,
+        "cost": -0.35754291424811413,
+        "approx_ratio": 1.0
+      }
+    ],
+    "qaoa_progress": [
+      {
+        "max_iter": 10,
+        "n_evaluations": 20,
+        "cost": -0.35754291424811413,
+        "approx_ratio": 1.0
+      },
+      {
+        "max_iter": 25,
+        "n_evaluations": 50,
+        "cost": -0.35754291424811413,
+        "approx_ratio": 1.0
+      },
+      {
+        "max_iter": 50,
+        "n_evaluations": 100,
+        "cost": -0.35754291424811413,
+        "approx_ratio": 1.0
+      },
+      {
+        "max_iter": 100,
+        "n_evaluations": 200,
+        "cost": -0.35754291424811413,
+        "approx_ratio": 1.0
+      },
+      {
+        "max_iter": 150,
+        "n_evaluations": 300,
+        "cost": -0.35754291424811413,
+        "approx_ratio": 1.0
+      }
+    ],
+    "sa_99_at": {
+      "flips": 300,
+      "cost": -0.35754291424811413,
+      "approx_ratio": 1.0
+    },
+    "qaoa_95_at": {
+      "max_iter": 10,
+      "n_evaluations": 20,
+      "cost": -0.35754291424811413,
+      "approx_ratio": 1.0
+    },
+    "checks": {
+      "SA \u2265 99% within 10^3 flips": true,
+      "QAOA \u2265 95% within ~150 evals": true
+    }
+  },
+  {
+    "slide": 21,
+    "title": "Scalability \u2014 memory + wall + noise arithmetic",
+    "memory_bytes_at_N": {
+      "20": 16777216,
+      "24": 268435456,
+      "30": 17179869184,
+      "50": 18014398509481984
+    },
+    "memory_humanised": {
+      "N=20": "17 MB",
+      "N=24": "268 MB",
+      "N=30": "17.2 GB",
+      "N=50": "18 PB"
+    },
+    "fidelity_after_600_gates_at_99p5pct": 0.04941382211003858,
+    "wall_seconds_per_eval_by_N": {
+      "8": 0.03227114677429199,
+      "12": 0.09601306915283203,
+      "16": 1.4199917316436768,
+      "18": 13.06642198562622
+    },
+    "checks": {
+      "memory N=20 \u2248 16 MB": true,
+      "memory N=24 \u2248 256 MB": true,
+      "memory N=30 \u2248 16 GB": true,
+      "memory N=50 \u2248 16 PB": true,
+      "0.995^600 \u2248 5%": true,
+      "wall grows with N": true
+    }
+  },
+  {
+    "slide": 23,
+    "title": "Synthetic returns factor model",
+    "legacy_data_module_factors": 5,
+    "synthetic_module_factors_at_N12": 5,
+    "checks": {
+      "claim '3 latent factors' is accurate at default settings": false
+    }
+  },
+  {
+    "slide": 24,
+    "title": "Insight 03 \u2014 mixer trade-off",
+    "x_mixer_off_K_shell_mass": 0.0584327756908066,
+    "xy_ring_dicke_off_K_shell_mass": 0,
+    "approx_ratio_x": 1.0,
+    "approx_ratio_xy": 1.0,
+    "checks": {
+      "XY-ring + Dicke off-shell mass = 0 (exactly preserves K)": true,
+      "X-mixer leaks some off-shell mass": true,
+      "Deck '60% feasible' claim is instance-specific (off the K-shell ratio of uniform = 1 - C(N,K)/2^N)": true
+    }
+  }
+]

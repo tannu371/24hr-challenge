@@ -1,0 +1,23 @@
+{
+  "name": "trial_02_penalty_too_large",
+  "deck_setup": {
+    "N": 8,
+    "K": 4,
+    "P_K": 10000.0,
+    "p": 1
+  },
+  "deck_claim": "Optimization plateaus immediately; F is dominated by the spiky penalty surface.",
+  "observed": {
+    "plateau_drop_huge_PK": 36444.69972043342,
+    "plateau_relative_huge_PK": 0.4346485636749317,
+    "plateau_drop_sane_PK": 10.447752531926096,
+    "plateau_relative_sane_PK": 0.834033590852268,
+    "approx_ratio_huge_PK": 1.0,
+    "approx_ratio_sane_PK": 1.0,
+    "trial_id_huge": 130,
+    "trial_id_sane": 131
+  },
+  "matches_deck": true,
+  "verdict_text": "PASS \u2014 huge-P_K relative drop (0.435) is < half the sane-P_K drop (0.834). Optimizer plateaus, as the deck predicts.",
+  "wall_seconds": 1.1757428646087646
+}

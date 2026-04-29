@@ -1,0 +1,245 @@
+{
+  "name": "n8_seed42_p2_xy_dicke",
+  "params": {
+    "mode": "synthetic",
+    "N": 8,
+    "K": 3,
+    "lambda": 2.5,
+    "lambda_return": 1.0,
+    "P_K": 5.0,
+    "P_R": 0.5,
+    "P_S": 0.0,
+    "theta_risk": 0.04,
+    "sector_caps": {},
+    "transaction_costs": [],
+    "seed": 42,
+    "n_periods": 504,
+    "asset_names": [
+      "A00",
+      "A01",
+      "A02",
+      "A03",
+      "A04",
+      "A05",
+      "A06",
+      "A07"
+    ],
+    "p": 2,
+    "mixer": "xy_ring",
+    "init_state": "dicke"
+  },
+  "results": {
+    "kind": "qaoa_hw",
+    "status": "complete",
+    "energy": 0.6732039720531516,
+    "cost": 0.05180833131429097,
+    "selected": [
+      1,
+      4,
+      5
+    ],
+    "selected_names": [
+      "A01",
+      "A04",
+      "A05"
+    ],
+    "K": 3,
+    "top_bitstrings": [
+      {
+        "bitstring": "01010010",
+        "x": [
+          0,
+          1,
+          0,
+          0,
+          1,
+          0,
+          1,
+          0
+        ],
+        "count": 608,
+        "probability": 0.1484375,
+        "cost": 0.07242477080210108,
+        "K": 3
+      },
+      {
+        "bitstring": "01100010",
+        "x": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          1,
+          1,
+          0
+        ],
+        "count": 325,
+        "probability": 0.079345703125,
+        "cost": 0.06784467538588501,
+        "K": 3
+      },
+      {
+        "bitstring": "00110010",
+        "x": [
+          0,
+          1,
+          0,
+          0,
+          1,
+          1,
+          0,
+          0
+        ],
+        "count": 301,
+        "probability": 0.073486328125,
+        "cost": 0.05180833131429097,
+        "K": 3
+      },
+      {
+        "bitstring": "01010001",
+        "x": [
+          1,
+          0,
+          0,
+          0,
+          1,
+          0,
+          1,
+          0
+        ],
+        "count": 249,
+        "probability": 0.060791015625,
+        "cost": 0.10392936627917493,
+        "K": 3
+      },
+      {
+        "bitstring": "00100011",
+        "x": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0
+        ],
+        "count": 193,
+        "probability": 0.047119140625,
+        "cost": 0.08551928387163343,
+        "K": 3
+      },
+      {
+        "bitstring": "10100010",
+        "x": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          1,
+          0,
+          1
+        ],
+        "count": 156,
+        "probability": 0.0380859375,
+        "cost": 0.13925528479148142,
+        "K": 3
+      },
+      {
+        "bitstring": "01110000",
+        "x": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          0
+        ],
+        "count": 140,
+        "probability": 0.0341796875,
+        "cost": 0.061425508871280954,
+        "K": 3
+      },
+      {
+        "bitstring": "00101010",
+        "x": [
+          0,
+          1,
+          0,
+          1,
+          0,
+          1,
+          0,
+          0
+        ],
+        "count": 139,
+        "probability": 0.033935546875,
+        "cost": 0.17471217660871474,
+        "K": 3
+      },
+      {
+        "bitstring": "00100110",
+        "x": [
+          0,
+          1,
+          1,
+          0,
+          0,
+          1,
+          0,
+          0
+        ],
+        "count": 129,
+        "probability": 0.031494140625,
+        "cost": 0.21209496978107722,
+        "K": 3
+      },
+      {
+        "bitstring": "00010011",
+        "x": [
+          1,
+          1,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "count": 123,
+        "probability": 0.030029296875,
+        "cost": 0.08961100619531237,
+        "K": 3
+      }
+    ],
+    "approx_ratio": 1.0,
+    "classical_optimum": 0.05180833131429097,
+    "n_unique_bitstrings": 147,
+    "shots": 4096,
+    "p": 2,
+    "mixer": "xy_ring",
+    "init_state": "dicke",
+    "theta_star": [
+      -7.359506674757236,
+      -3.6842004038808143,
+      2.9033166609968792,
+      0.49997434128464724
+    ]
+  },
+  "meta": {
+    "stand_in": true,
+    "backend": "aer_statevector_with_noise_stand_in",
+    "shots": 4096,
+    "readout_bit_flip_p": 0.015,
+    "seed": 42,
+    "qaoa_p": 2,
+    "mixer": "xy_ring",
+    "init_state": "dicke",
+    "note": "Synthetic stand-in for demo. Replace with a real hardware run via /hw/submit.",
+    "saved_at": "2026-04-29T07:17:29.199735+00:00"
+  }
+}

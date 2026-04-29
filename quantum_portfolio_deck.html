@@ -1,0 +1,3232 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Hybrid Quantum–Classical Portfolio Optimization · Tannu Kumari · PROJECT-Q × Zuntenium Pilot</title>
+
+  <!-- KaTeX for math rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous" />
+
+  <!-- Typography: Fraunces (display serif), IBM Plex Sans (body), IBM Plex Mono (code/math fallback) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,300..900,0..100,0..1&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+    rel="stylesheet" />
+
+  <style>
+    /* ---------- Tokens ---------- */
+    :root {
+      --ink: #f4f2ee;
+      --ink-2: #ffffff;
+      --ink-3: #f9f8f6;
+      --line: #ddd8cc;
+      --line-2: #c8c2b4;
+      --bone: #1a1a2e;
+      --bone-dim: #3a3a52;
+      --bone-fade: #7a7690;
+      --gold: #c4880a;
+      --gold-deep: #a06e06;
+      --cyan: #0e7490;
+      --cyan-deep: #155e75;
+      --rose: #c0392b;
+      --grass: #4a8c3f;
+      --shadow: 0 30px 80px -20px rgba(0, 0, 0, .10);
+      --serif: "Inter", "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+      --sans: "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+      --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+      --body-bg: #eceae4;
+      --grain-opacity: .08;
+      --nav-bg: rgba(255, 255, 255, .7);
+    }
+
+    /* Dark theme */
+    [data-theme="dark"] {
+      --ink: #0a0d14;
+      --ink-2: #11151f;
+      --ink-3: #161b27;
+      --line: #232a3a;
+      --line-2: #2e3648;
+      --bone: #ece6d6;
+      --bone-dim: #b9b3a4;
+      --bone-fade: #7a7668;
+      --gold: #e8b04b;
+      --gold-deep: #b78429;
+      --cyan: #5fd4e8;
+      --cyan-deep: #2c8b9c;
+      --rose: #e8746a;
+      --grass: #8ec07c;
+      --shadow: 0 30px 80px -20px rgba(0, 0, 0, .6);
+
+      --body-bg: #0a0d14;
+      --grain-opacity: .35;
+      --nav-bg: rgba(0, 0, 0, .5);
+    }
+
+    /* ---------- Reset ---------- */
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      height: 100%;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background:
+        radial-gradient(1200px 700px at 85% -10%, rgba(232, 176, 75, .06), transparent 60%),
+        radial-gradient(900px 600px at -10% 110%, rgba(95, 212, 232, .05), transparent 60%),
+        var(--body-bg, var(--ink));
+      color: var(--bone);
+      font-family: var(--sans);
+      font-style: normal;
+      font-feature-settings: "ss01", "cv11";
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+    }
+
+    /* Subtle film grain */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.92  0 0 0 0 0.90  0 0 0 0 0.85  0 0 0 0.06 0'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.45'/></svg>");
+      mix-blend-mode: overlay;
+      opacity: var(--grain-opacity, .35);
+      z-index: 9999;
+    }
+
+    /* ---------- Stage / slides ---------- */
+    #stage {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 48px 64px 96px;
+    }
+
+    .slide {
+      width: min(1280px, 100%);
+      height: min(760px, calc(100vh - 144px));
+      background: linear-gradient(180deg, var(--ink-2), var(--ink-3));
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      box-shadow: var(--shadow);
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(8px);
+      transition: opacity .35s ease, transform .45s cubic-bezier(.2, .7, .2, 1);
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      overflow: hidden;
+    }
+
+    .slide.active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
+    }
+
+    .slide.prev {
+      transform: translateY(-8px);
+    }
+
+    /* slide chrome */
+    .chrome {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 32px;
+      border-bottom: 1px solid var(--line);
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: var(--bone-fade);
+    }
+
+    .chrome .id {
+      color: var(--cyan);
+    }
+
+    .chrome .id::before {
+      content: "# ";
+      color: var(--bone-fade);
+    }
+
+    .chrome .crumbs {
+      display: flex;
+      gap: 18px;
+    }
+
+    .chrome .crumbs span {
+      position: relative;
+    }
+
+    .chrome .crumbs span+span::before {
+      content: "·";
+      position: absolute;
+      left: -12px;
+      color: var(--line-2);
+    }
+
+    .body {
+      padding: 34px 56px;
+      overflow: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--line-2) transparent;
+    }
+
+    .body::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .body::-webkit-scrollbar-thumb {
+      background: var(--line-2);
+      border-radius: 3px;
+    }
+
+    .foot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 32px;
+      border-top: 1px solid var(--line);
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--bone-fade);
+      letter-spacing: .06em;
+    }
+
+    .foot .marker {
+      color: var(--gold);
+    }
+
+    /* ---------- Typography ---------- */
+    .eyebrow {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: .22em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 14px;
+    }
+
+    h1.display {
+      font-family: "Inter", var(--sans);
+      font-weight: 700;
+      font-size: clamp(36px, 4.4vw, 64px);
+      line-height: 1.06;
+      letter-spacing: -.025em;
+      font-style: normal;
+      color: var(--bone);
+    }
+
+    h1.display em {
+      font-style: normal;
+      color: var(--gold);
+      font-weight: 800;
+    }
+
+    h2.title {
+      font-family: "Inter", var(--sans);
+      font-weight: 600;
+      font-size: clamp(26px, 2.5vw, 38px);
+      line-height: 1.12;
+      letter-spacing: -.015em;
+      font-style: normal;
+      color: var(--bone);
+      margin-bottom: 18px;
+    }
+
+    h2.title em {
+      color: var(--cyan);
+      font-style: normal;
+      font-weight: 700;
+    }
+
+    h3.sub {
+      font-family: "Inter", var(--sans);
+      font-weight: 600;
+      font-size: 17px;
+      letter-spacing: .01em;
+      font-style: normal;
+      color: var(--bone-dim);
+      margin: 18px 0 8px;
+    }
+
+    p,
+    li {
+      font-size: 15.5px;
+      line-height: 1.55;
+      color: var(--bone-dim);
+    }
+
+    p strong,
+    li strong {
+      color: var(--bone);
+      font-weight: 500;
+    }
+
+    p em {
+      color: var(--gold);
+      font-style: normal;
+      font-family: var(--sans);
+      font-weight: 600;
+    }
+
+    ul,
+    ol {
+      padding-left: 18px;
+    }
+
+    li {
+      margin: 5px 0;
+    }
+
+    li::marker {
+      color: var(--gold-deep);
+    }
+
+    a {
+      color: var(--cyan);
+      text-decoration: none;
+      border-bottom: 1px dotted var(--cyan-deep);
+    }
+
+    a:hover {
+      color: var(--gold);
+      border-color: var(--gold-deep);
+    }
+
+    hr.rule {
+      border: 0;
+      border-top: 1px solid var(--line);
+      margin: 18px 0;
+    }
+
+    /* ---------- Math blocks ---------- */
+    .math {
+      background: linear-gradient(180deg, rgba(95, 212, 232, .04), rgba(95, 212, 232, .02));
+      border: 1px solid var(--line);
+      border-left: 2px solid var(--cyan-deep);
+      padding: 14px 20px;
+      border-radius: 3px;
+      margin: 10px 0;
+      font-size: 15px;
+      overflow-x: auto;
+    }
+
+    .math.label {
+      position: relative;
+      padding-right: 80px;
+    }
+
+    .math.label::after {
+      content: attr(data-label);
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: .2em;
+      color: var(--bone-fade);
+    }
+
+    /* ---------- Code ---------- */
+    pre.code {
+      background: var(--ink);
+      border: 1px solid var(--line);
+      border-left: 2px solid var(--gold-deep);
+      border-radius: 3px;
+      padding: 16px 18px;
+      font-family: var(--mono);
+      font-size: 12.5px;
+      line-height: 1.6;
+      color: var(--bone);
+      overflow: auto;
+      margin: 10px 0;
+    }
+
+    pre.code .k {
+      color: var(--gold);
+    }
+
+    pre.code .s {
+      color: var(--grass);
+    }
+
+    pre.code .c {
+      color: var(--bone-fade);
+      font-style: normal;
+    }
+
+    pre.code .n {
+      color: var(--cyan);
+    }
+
+    pre.code .f {
+      color: #d8a4e0;
+    }
+
+    /* ---------- Layout helpers ---------- */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 28px;
+      align-items: start;
+    }
+
+    .grid-2-7-5 {
+      display: grid;
+      grid-template-columns: 7fr 5fr;
+      gap: 32px;
+      align-items: start;
+    }
+
+    .grid-2-5-7 {
+      display: grid;
+      grid-template-columns: 5fr 7fr;
+      gap: 32px;
+      align-items: start;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .stack {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .center {
+      display: grid;
+      place-items: center;
+      height: 100%;
+      text-align: center;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.012);
+      border: 1px solid var(--line);
+      padding: 18px 20px;
+      border-radius: 3px;
+    }
+
+    .card .label {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      color: var(--bone-fade);
+      margin-bottom: 8px;
+    }
+
+    .card .num {
+      font-family: "Inter", var(--sans);
+      font-weight: 300;
+      font-size: 42px;
+      color: var(--bone);
+      font-style: normal;
+    }
+
+    .card .num em {
+      color: var(--gold);
+      font-style: normal;
+    }
+
+    .tag {
+      display: inline-block;
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border: 1px solid var(--line-2);
+      border-radius: 2px;
+      color: var(--bone-fade);
+    }
+
+    .tag.cyan {
+      color: var(--cyan);
+      border-color: var(--cyan-deep);
+    }
+
+    .tag.gold {
+      color: var(--gold);
+      border-color: var(--gold-deep);
+    }
+
+    .tag.rose {
+      color: var(--rose);
+      border-color: #7a3431;
+    }
+
+    .tag.grass {
+      color: var(--grass);
+      border-color: #456141;
+    }
+
+    /* trial banner */
+    .trial-head {
+      display: flex;
+      align-items: baseline;
+      gap: 18px;
+      margin-bottom: 14px;
+    }
+
+    .trial-head .num {
+      font-family: "Inter", var(--sans);
+      font-style: normal;
+      font-weight: 800;
+      font-size: 64px;
+      color: var(--rose);
+      line-height: .9;
+    }
+
+    .trial-head.solved .num {
+      color: var(--grass);
+    }
+
+    .trial-head .head {
+      flex: 1;
+    }
+
+    .trial-head h2 {
+      margin: 0;
+    }
+
+    .symptom {
+      border-left: 2px solid var(--rose);
+      padding: 8px 14px;
+      background: rgba(232, 116, 106, .04);
+      margin: 8px 0;
+    }
+
+    .trial-fix {
+      border-left: 2px solid var(--grass);
+      padding: 8px 14px;
+      background: rgba(142, 192, 124, .04);
+      margin: 8px 0;
+    }
+
+    .trial-fix strong,
+    .symptom strong {
+      color: var(--bone);
+    }
+
+    /* ---------- Charts (hand-built SVG) ---------- */
+    .chart {
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      border: 1px solid var(--line);
+      border-radius: 3px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, .012), transparent);
+      padding: 14px;
+    }
+
+    .chart text {
+      font-family: var(--mono);
+      fill: var(--bone-fade);
+      font-size: 10px;
+    }
+
+    .chart .axis {
+      stroke: var(--line-2);
+      stroke-width: 1;
+    }
+
+    .chart .grid {
+      stroke: var(--line);
+      stroke-width: 1;
+      stroke-dasharray: 2 4;
+    }
+
+    .chart .label-x,
+    .chart .label-y {
+      fill: var(--bone-dim);
+      font-size: 10px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    .chart .legend text {
+      fill: var(--bone);
+      font-size: 10px;
+    }
+
+    /* ---------- Title slide special ---------- */
+    .title-slide {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+    }
+
+    .title-mast {
+      padding: 32px 56px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: var(--bone-fade);
+    }
+
+    .title-mast .right {
+      text-align: right;
+    }
+
+    .title-mast .right .who {
+      color: var(--gold);
+    }
+
+    .title-body {
+      padding: 32px 56px;
+      display: grid;
+      align-content: end;
+      gap: 28px;
+    }
+
+    .title-meta {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--bone-fade);
+      display: flex;
+      gap: 36px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+    }
+
+    .title-meta div span {
+      display: block;
+      color: var(--gold);
+      font-size: 10px;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      margin-bottom: 3px;
+    }
+
+    /* ---------- Diagram: QAOA circuit ---------- */
+    .qcircuit {
+      width: 100%;
+      aspect-ratio: 5/2;
+      border: 1px solid var(--line);
+      border-radius: 3px;
+      padding: 18px;
+      background: linear-gradient(180deg, rgba(95, 212, 232, .02), transparent);
+    }
+
+    .qcircuit text {
+      font-family: var(--mono);
+      font-size: 11px;
+    }
+
+    /* ---------- Pareto / triangle ---------- */
+    .tri {
+      width: 100%;
+      aspect-ratio: 1.2;
+    }
+
+    /* ---------- Penalty slider playground ---------- */
+    .playground {
+      border: 1px solid var(--line);
+      padding: 18px;
+      border-radius: 3px;
+      background: rgba(232, 176, 75, .02);
+    }
+
+    .playground .row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin: 10px 0;
+    }
+
+    .playground label {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--bone-fade);
+      width: 140px;
+    }
+
+    .playground input[type=range] {
+      flex: 1;
+      appearance: none;
+      height: 2px;
+      background: var(--line-2);
+      border-radius: 2px;
+    }
+
+    .playground input[type=range]::-webkit-slider-thumb {
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--gold);
+      border: 2px solid var(--ink);
+      cursor: pointer;
+    }
+
+    .playground .val {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--gold);
+      width: 64px;
+      text-align: right;
+    }
+
+    /* ---------- Nav ---------- */
+    #nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 32px;
+      gap: 18px;
+      background: linear-gradient(180deg, transparent, var(--nav-bg, rgba(0, 0, 0, .5)));
+      z-index: 20;
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: var(--bone-fade);
+    }
+
+    #nav .center-pill {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: var(--ink-2);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      padding: 6px 14px;
+    }
+
+    .btn {
+      appearance: none;
+      background: transparent;
+      border: 1px solid var(--line);
+      color: var(--bone-dim);
+      padding: 7px 14px;
+      border-radius: 3px;
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+
+    .btn:hover {
+      color: var(--bone);
+      border-color: var(--gold-deep);
+      background: rgba(232, 176, 75, .04);
+    }
+
+    .dotrow {
+      display: flex;
+      gap: 6px;
+    }
+
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--line-2);
+      cursor: pointer;
+      transition: all .25s;
+    }
+
+    .dot.active {
+      background: var(--gold);
+      box-shadow: 0 0 8px var(--gold-deep);
+    }
+
+    .dot:hover {
+      background: var(--cyan);
+    }
+
+    #counter {
+      color: var(--bone);
+    }
+
+    #counter em {
+      color: var(--gold);
+      font-style: normal;
+    }
+
+    /* ---------- Theme toggle ---------- */
+    #theme-toggle {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 40;
+      appearance: none;
+      background: var(--ink-2);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      padding: 6px 14px;
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--bone-dim);
+      cursor: pointer;
+      transition: all .25s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    #theme-toggle:hover {
+      border-color: var(--gold-deep);
+      color: var(--bone);
+    }
+
+    #theme-toggle .icon {
+      font-size: 15px;
+      line-height: 1;
+    }
+
+    /* ---------- Overview mode ---------- */
+    #overview {
+      position: fixed;
+      inset: 0;
+      z-index: 30;
+      background: rgba(8, 10, 16, 0.97);
+      display: none;
+      padding: 48px;
+      overflow: auto;
+    }
+
+    #overview.on {
+      display: block;
+    }
+
+    #overview h2 {
+      font-family: "Inter", var(--sans);
+      font-size: 28px;
+      color: var(--bone);
+      font-variation-settings: "opsz" 60;
+      margin-bottom: 28px;
+    }
+
+    #overview .grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+    }
+
+    .thumb {
+      aspect-ratio: 16/10;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      padding: 14px;
+      background: var(--ink-2);
+      cursor: pointer;
+      transition: all .2s;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 11px;
+    }
+
+    .thumb:hover {
+      border-color: var(--gold-deep);
+      transform: translateY(-2px);
+    }
+
+    .thumb .thumb-id {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: .15em;
+      color: var(--gold);
+    }
+
+    .thumb .thumb-title {
+      font-family: "Inter", var(--sans);
+      font-size: 13px;
+      color: var(--bone);
+      line-height: 1.2;
+      font-style: normal;
+    }
+
+    .thumb .thumb-tag {
+      font-family: var(--mono);
+      font-size: 9px;
+      color: var(--bone-fade);
+      letter-spacing: .12em;
+      margin-top: auto;
+      text-transform: uppercase;
+    }
+
+    /* ---------- References ---------- */
+    .refs {
+      counter-reset: ref;
+      font-family: var(--mono);
+      font-size: 12.5px;
+    }
+
+    .refs .ref {
+      counter-increment: ref;
+      display: grid;
+      grid-template-columns: 32px 1fr;
+      gap: 14px;
+      padding: 8px 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .refs .ref:first-child {
+      border-top: 0;
+    }
+
+    .refs .ref::before {
+      content: "[" counter(ref) "]";
+      color: var(--gold);
+      font-weight: 500;
+    }
+
+    .refs .ref .who {
+      color: var(--bone);
+    }
+
+    .refs .ref .what {
+      color: var(--bone-dim);
+      font-style: normal;
+    }
+
+    .refs .ref .where {
+      color: var(--bone-fade);
+    }
+
+    /* Help overlay */
+    #help {
+      position: fixed;
+      bottom: 64px;
+      right: 32px;
+      z-index: 25;
+      background: var(--ink-2);
+      border: 1px solid var(--line);
+      padding: 14px 18px;
+      border-radius: 4px;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--bone-dim);
+      display: none;
+    }
+
+    #help.on {
+      display: block;
+    }
+
+    #help kbd {
+      display: inline-block;
+      padding: 2px 6px;
+      background: var(--ink);
+      border: 1px solid var(--line-2);
+      border-radius: 3px;
+      color: var(--gold);
+      margin: 0 2px;
+    }
+
+    @media (max-width: 900px) {
+      #stage {
+        padding: 16px;
+      }
+
+      .slide {
+        height: calc(100vh - 80px);
+      }
+
+      .body {
+        padding: 18px;
+      }
+
+      .grid-2,
+      .grid-2-7-5,
+      .grid-2-5-7,
+      .grid-3 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Global italic override */
+    em,
+    i,
+    cite,
+    dfn,
+    var {
+      font-style: normal !important;
+    }
+
+    /* SVG theme adaptation: make SVGs adapt via CSS filters on the slide SVGs */
+    .slide svg {
+      transition: none;
+    }
+
+    /* Light theme: override hardcoded SVG text colors */
+    :root .slide svg text[fill="#ece6d6"] {
+      fill: var(--bone) !important;
+    }
+
+    :root .slide svg text[fill="#7a7668"] {
+      fill: var(--bone-fade) !important;
+    }
+
+    :root .slide svg text[fill="#e8b04b"] {
+      fill: var(--gold) !important;
+    }
+
+    :root .slide svg text[fill="#5fd4e8"] {
+      fill: var(--cyan) !important;
+    }
+
+    :root .slide svg text[fill="#e8746a"] {
+      fill: var(--rose) !important;
+    }
+
+    :root .slide svg text[fill="#8ec07c"] {
+      fill: var(--grass) !important;
+    }
+
+    :root .slide svg text[fill="#b78429"] {
+      fill: var(--gold-deep) !important;
+    }
+
+    :root .slide svg text[fill="#d8a4e0"] {
+      fill: #9b59b6 !important;
+    }
+
+    [data-theme="dark"] .slide svg text[fill="#d8a4e0"] {
+      fill: #d8a4e0 !important;
+    }
+
+    :root .slide svg text[fill="#b9b3a4"] {
+      fill: var(--bone-dim) !important;
+    }
+
+    /* SVG rect/line/polygon strokes */
+    :root .slide svg rect[stroke="#2e3648"] {
+      stroke: var(--line-2) !important;
+    }
+
+    :root .slide svg rect[stroke="#232a3a"] {
+      stroke: var(--line) !important;
+    }
+
+    :root .slide svg rect[stroke="#5fd4e8"] {
+      stroke: var(--cyan) !important;
+    }
+
+    :root .slide svg rect[stroke="#e8b04b"] {
+      stroke: var(--gold) !important;
+    }
+
+    :root .slide svg rect[stroke="#b78429"] {
+      stroke: var(--gold-deep) !important;
+    }
+
+    :root .slide svg rect[stroke="#2c8b9c"] {
+      stroke: var(--cyan-deep) !important;
+    }
+
+    :root .slide svg rect[stroke="#7a3431"] {
+      stroke: var(--rose) !important;
+    }
+
+    :root .slide svg rect[stroke="#456141"] {
+      stroke: var(--grass) !important;
+    }
+
+    :root .slide svg rect[stroke="#7a7668"] {
+      stroke: var(--bone-fade) !important;
+    }
+
+    :root .slide svg line[stroke="#2e3648"] {
+      stroke: var(--line-2) !important;
+    }
+
+    :root .slide svg line[stroke="#232a3a"] {
+      stroke: var(--line) !important;
+    }
+
+    :root .slide svg line[stroke="#5fd4e8"] {
+      stroke: var(--cyan) !important;
+    }
+
+    :root .slide svg line[stroke="#e8746a"] {
+      stroke: var(--rose) !important;
+    }
+
+    :root .slide svg line[stroke="#e8b04b"] {
+      stroke: var(--gold) !important;
+    }
+
+    :root .slide svg line[stroke="#d8a4e0"] {
+      stroke: #9b59b6 !important;
+    }
+
+    [data-theme="dark"] .slide svg line[stroke="#d8a4e0"] {
+      stroke: #d8a4e0 !important;
+    }
+
+    :root .slide svg line[stroke="#8ec07c"] {
+      stroke: var(--grass) !important;
+    }
+
+    :root .slide svg polygon[stroke="#2e3648"] {
+      stroke: var(--line-2) !important;
+    }
+
+    :root .slide svg g[stroke="#2e3648"] {
+      stroke: var(--line-2) !important;
+    }
+
+    :root .slide svg g[stroke="#5fd4e8"] {
+      stroke: var(--cyan) !important;
+    }
+
+    /* SVG rect fills */
+    :root .slide svg rect[fill="#161b27"] {
+      fill: var(--ink-3) !important;
+    }
+
+    :root .slide svg rect[fill="#11151f"] {
+      fill: var(--ink-2) !important;
+    }
+
+    :root .slide svg rect[fill="#8ec07c"] {
+      fill: var(--grass) !important;
+    }
+
+    :root .slide svg rect[fill="#5fd4e8"] {
+      fill: var(--cyan) !important;
+    }
+
+    :root .slide svg rect[fill="#e8b04b"] {
+      fill: var(--gold) !important;
+    }
+
+    :root .slide svg rect[fill="#b78429"] {
+      fill: var(--gold-deep) !important;
+    }
+
+    :root .slide svg rect[fill="#d8a4e0"] {
+      fill: #9b59b6 !important;
+    }
+
+    [data-theme="dark"] .slide svg rect[fill="#d8a4e0"] {
+      fill: #d8a4e0 !important;
+    }
+
+    /* SVG circle/path fills and strokes */
+    :root .slide svg circle[fill="#e8b04b"] {
+      fill: var(--gold) !important;
+    }
+
+    :root .slide svg circle[fill="#5fd4e8"] {
+      fill: var(--cyan) !important;
+    }
+
+    :root .slide svg circle[fill="#8ec07c"] {
+      fill: var(--grass) !important;
+    }
+
+    :root .slide svg g[fill="#e8b04b"] {
+      fill: var(--gold) !important;
+    }
+
+    :root .slide svg g[fill="#ece6d6"] {
+      fill: var(--bone) !important;
+    }
+
+    :root .slide svg g[fill="#7a7668"] {
+      fill: var(--bone-fade) !important;
+    }
+
+    :root .slide svg g[fill="#7a7690"] {
+      fill: var(--bone-fade) !important;
+    }
+
+    :root .slide svg g[fill="#b9b3a4"] {
+      fill: var(--bone-dim) !important;
+    }
+
+    :root .slide svg g[stroke="#e8b04b"] {
+      stroke: var(--gold) !important;
+    }
+
+    :root .slide svg g[stroke="#232a3a"] {
+      stroke: var(--line) !important;
+    }
+
+    :root .slide svg g[fill="#e8746a"] {
+      fill: var(--rose) !important;
+    }
+
+    :root .slide svg path[fill="#5fd4e8"] {
+      fill: var(--cyan) !important;
+    }
+
+    :root .slide svg path[stroke="#e8746a"] {
+      stroke: var(--rose) !important;
+    }
+
+    :root .slide svg path[stroke="#8ec07c"] {
+      stroke: var(--grass) !important;
+    }
+
+    /* Prevent slide-level SVG theme rules from bleeding into KaTeX math.
+       KaTeX renders ≠, underbraces, etc. as SVG elements that can be
+       accidentally matched by the attribute selectors below. */
+    .katex svg path,
+    .katex svg line,
+    .katex svg rect {
+      stroke: inherit !important;
+      fill: inherit !important;
+    }
+
+    :root .slide svg path[stroke="#5fd4e8"] {
+      stroke: var(--cyan) !important;
+    }
+
+    :root .slide svg path[stroke="#e8b04b"] {
+      stroke: var(--gold) !important;
+    }
+
+    :root .slide svg path[stroke="#d8a4e0"] {
+      stroke: #9b59b6 !important;
+    }
+
+    [data-theme="dark"] .slide svg path[stroke="#d8a4e0"] {
+      stroke: #d8a4e0 !important;
+    }
+  </style>
+</head>
+
+<body>
+
+  <button id="theme-toggle" title="Toggle light / dark theme">
+    <span class="icon" id="theme-icon">☀️</span>
+    <span id="theme-label">Light</span>
+  </button>
+
+  <main id="stage">
+    <!-- ================================================================ -->
+    <!-- SLIDE 1 - TITLE                                                   -->
+    <!-- ================================================================ -->
+    <section class="slide title-slide" data-id="01" data-section="Cover">
+      <div class="title-mast">
+        <div>
+          <div>PROJECT-Q · 24-hour Challenge</div>
+          <div style="margin-top:6px; color:var(--bone-fade)">28 Apr 2026 · 19:00 IST → 29 Apr 2026 · 19:00 IST</div>
+        </div>
+        <div class="right">
+          <div>Submitted by</div>
+          <div class="who" style="margin-top:6px">Tannu Kumari</div>
+        </div>
+      </div>
+
+      <div class="title-body">
+        <div class="eyebrow">Research Note &amp; Prototype Walkthrough</div>
+        <h1 class="display">
+          A Hybrid<br />
+          <em>Quantum–Classical</em><br />
+          Framework for<br />
+          Constrained Multi-Objective<br />
+          Portfolio Optimization
+        </h1>
+
+        <div class="title-meta">
+          <div><span>Method</span>QUBO → Ising → QAOA, with classical baseline</div>
+          <div><span>Stack</span>Qiskit · NumPy · CVXPY · scipy.optimize</div>
+          <div><span>Honest take</span>No quantum advantage — explained why</div>
+        </div>
+      </div>
+
+      <div class="foot">
+        <span class="marker">▍</span>
+        <span>Press <strong style="color:var(--bone)">→</strong> to begin · <strong style="color:var(--bone)">O</strong>
+          for overview · <strong style="color:var(--bone)">?</strong> for help</span>
+        <span>01 / 26</span>
+      </div>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- SLIDE 2 - WHAT I WAS ASKED TO DO                                  -->
+    <!-- ================================================================ -->
+    <section class="slide" data-id="02" data-section="Framing">
+      <div class="chrome">
+        <span class="id">02 · The Brief</span>
+        <span class="crumbs"><span>Framing</span><span>What we are solving</span></span>
+      </div>
+      <div class="body">
+        <div class="eyebrow">Reading the brief carefully</div>
+        <h2 class="title">A combinatorial multi-objective problem dressed as a finance problem.</h2>
+
+        <div class="grid-2-7-5" style="margin-top:24px">
+          <div>
+            <p>The problem is classical Markowitz, but layered with three structural twists that change its character
+              entirely:</p>
+            <ol style="margin-top:14px">
+              <li><strong>Multi-objective.</strong> Return, risk, and diversification are <em>simultaneously</em> traded
+                off — there is no single scalar truth.</li>
+              <li><strong>Combinatorial constraints.</strong> Cardinality (pick exactly K of N), sector caps, and
+                round-lot/budget integrality push the problem out of convex land into NP-hard territory.</li>
+              <li><strong>Real-world friction.</strong> Transaction costs and risk thresholds are non-linear and
+                asymmetric.</li>
+            </ol>
+            <p style="margin-top:16px">This combination is exactly the kind of problem where one <em>could imagine</em>
+              a quantum advantage — and the brief asks us to honestly evaluate whether we got one.</p>
+          </div>
+
+          <div class="stack">
+            <div class="card">
+              <div class="label">Decision space</div>
+              <div class="num"><em>2<sup>N</sup></em></div>
+              <p style="margin-top:6px; font-size:12.5px">Binary subsets for asset selection. For N=20 → ~10⁶; for N=50
+                → ~10¹⁵.</p>
+            </div>
+            <div class="card">
+              <div class="label">Objectives</div>
+              <div class="num">3</div>
+              <p style="margin-top:6px; font-size:12.5px">Return ↑ · Risk ↓ · Diversification ↑ — collapsed via
+                scalarization.</p>
+            </div>
+            <div class="card">
+              <div class="label">Constraints encoded</div>
+              <div class="num">5</div>
+              <p style="margin-top:6px; font-size:12.5px">Budget · cardinality · sector cap · risk threshold ·
+                transaction cost.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="foot"><span class="marker">▍</span><span>Framing the brief</span><span>02 / 26</span></div>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- SLIDE 3 - SOLUTION TOPOLOGY                                       -->
+    <!-- ================================================================ -->
+    <section class="slide" data-id="03" data-section="Framing">
+      <div class="chrome">
+        <span class="id">03 · Solution topology</span>
+        <span class="crumbs"><span>Framing</span><span>How everything connects</span></span>
+      </div>
+      <div class="body">
+        <div class="eyebrow">A map of the next 23 slides</div>
+        <h2 class="title">From <em>Markowitz</em> to a quantum Hamiltonian, and back to a verdict.</h2>
+
+        <svg viewBox="0 0 1100 360" style="width:100%; margin-top:24px" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M0,0 L10,5 L0,10 z" fill="#5fd4e8" />
+            </marker>
+          </defs>
+          <!-- Stages -->
+          <g font-family="IBM Plex Mono" font-size="11" fill="#ece6d6">
+            <!-- Boxes -->
+            <g>
+              <rect x="20" y="40" width="160" height="64" rx="3" fill="none" stroke="#2e3648" />
+              <text x="100" y="68" text-anchor="middle" fill="#e8b04b" font-size="10"
+                letter-spacing="2">CLASSICAL</text>
+              <text x="100" y="86" text-anchor="middle">Markowitz MV</text>
+            </g>
+            <g>
+              <rect x="200" y="40" width="160" height="64" rx="3" fill="none" stroke="#2e3648" />
+              <text x="280" y="68" text-anchor="middle" fill="#e8b04b" font-size="10" letter-spacing="2">EXTENDED</text>
+              <text x="280" y="86" text-anchor="middle">Multi-objective</text>
+            </g>
+            <g>
+              <rect x="380" y="40" width="160" height="64" rx="3" fill="none" stroke="#2e3648" />
+              <text x="460" y="68" text-anchor="middle" fill="#e8b04b" font-size="10" letter-spacing="2">DISCRETE</text>
+              <text x="460" y="86" text-anchor="middle">Cardinality QP</text>
+            </g>
+            <g>
+              <rect x="560" y="40" width="160" height="64" rx="3" fill="#161b27" stroke="#5fd4e8" />
+              <text x="640" y="68" text-anchor="middle" fill="#5fd4e8" font-size="10"
+                letter-spacing="2">REFORMULATE</text>
+              <text x="640" y="86" text-anchor="middle">QUBO &amp; Ising H</text>
+            </g>
+            <g>
+              <rect x="740" y="40" width="160" height="64" rx="3" fill="#161b27" stroke="#5fd4e8" />
+              <text x="820" y="68" text-anchor="middle" fill="#5fd4e8" font-size="10" letter-spacing="2">QUANTUM</text>
+              <text x="820" y="86" text-anchor="middle">QAOA / VQE</text>
+            </g>
+            <g>
+              <rect x="920" y="40" width="160" height="64" rx="3" fill="none" stroke="#2e3648" />
+              <text x="1000" y="68" text-anchor="middle" fill="#e8b04b" font-size="10" letter-spacing="2">VERDICT</text>
+              <text x="1000" y="86" text-anchor="middle">Advantage?</text>
+            </g>
+
+            <!-- Connectors -->
+            <g stroke="#5fd4e8" stroke-width="1.2" fill="none" marker-end="url(#arr)">
+              <line x1="180" y1="72" x2="200" y2="72" />
+              <line x1="360" y1="72" x2="380" y2="72" />
+              <line x1="540" y1="72" x2="560" y2="72" />
+              <line x1="720" y1="72" x2="740" y2="72" />
+              <line x1="900" y1="72" x2="920" y2="72" />
+            </g>
+
+            <!-- Lower row: classical baseline + trial-and-error -->
+            <g>
+              <rect x="200" y="170" width="160" height="64" rx="3" fill="none" stroke="#b78429" />
+              <text x="280" y="198" text-anchor="middle" fill="#e8b04b" font-size="10"
+                letter-spacing="2">BASELINE</text>
+              <text x="280" y="216" text-anchor="middle">Brute · SA · CVX</text>
+            </g>
+            <g>
+              <rect x="560" y="170" width="160" height="64" rx="3" fill="none" stroke="#7a3431" />
+              <text x="640" y="198" text-anchor="middle" fill="#e8746a" font-size="10" letter-spacing="2">5
+                FAILURES</text>
+              <text x="640" y="216" text-anchor="middle">Trial &amp; error</text>
+            </g>
+            <g>
+              <rect x="740" y="170" width="160" height="64" rx="3" fill="none" stroke="#456141" />
+              <text x="820" y="198" text-anchor="middle" fill="#8ec07c" font-size="10" letter-spacing="2">RESULTS</text>
+              <text x="820" y="216" text-anchor="middle">Convergence &amp; gap</text>
+            </g>
+
+            <!-- Vertical connectors -->
+            <g stroke="#2e3648" stroke-width="1" stroke-dasharray="3 3" fill="none">
+              <line x1="280" y1="104" x2="280" y2="170" />
+              <line x1="640" y1="104" x2="640" y2="170" />
+              <line x1="820" y1="104" x2="820" y2="170" />
+            </g>
+
+            <!-- Caption -->
+            <text x="20" y="290" fill="#7a7668" font-size="10" letter-spacing="2">CYAN = QUANTUM PATH · GOLD = CLASSICAL
+              PATH · ROSE = WHERE I GOT STUCK</text>
+            <text x="20" y="310" fill="#7a7668" font-size="10" letter-spacing="2">EVERY HONEST PRESENTATION HAS A ROSE
+              BOX. THIS ONE HAS A WHOLE COLUMN.</text>
+          </g>
+        </svg>
+      </div>
+      <div class="foot"><span class="marker">▍</span><span>The route</span><span>03 / 26</span></div>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- SLIDE 4 - CLASSICAL MARKOWITZ                                     -->
+    <!-- ================================================================ -->
+    <section class="slide" data-id="04" data-section="Mathematics">
+      <div class="chrome">
+        <span class="id">04 · Classical foundation</span>
+        <span class="crumbs"><span>Mathematics</span><span>Markowitz mean–variance</span></span>
+      </div>
+      <div class="body">
+        <div class="eyebrow">Where everything starts (Markowitz, 1952)</div>
+        <h2 class="title">The convex, continuous version we will <em>break on purpose</em>.</h2>
+
+        <div class="grid-2-7-5" style="margin-top:18px">
+          <div>
+            <p><strong>Decision variables.</strong> Portfolio weights \( w \in \mathbb{R}^N \), where \(w_i\) is the
+              fraction of capital in asset \(i\).</p>
+            <p><strong>Inputs.</strong> Expected return vector \( \mu \in \mathbb{R}^N \), covariance matrix \( \Sigma
+              \in \mathbb{R}^{N\times N},\ \Sigma \succeq 0 \).</p>
+
+            <h3 class="sub">Mean–variance optimization problem</h3>
+            <div class="math label" data-label="(MV)">
+              \[ \min_{w}\;\; w^{\top}\Sigma\, w \;-\; q\, \mu^{\top}w
+              \;\;\;\text{s.t.}\;\; \mathbf{1}^{\top} w = 1,\;\; w \ge 0 \]
+            </div>
+            <p>The risk-aversion parameter \(q \ge 0\) sweeps the <em>efficient frontier</em>. With \(q=0\) we minimize
+              variance; with \(q\to\infty\) we chase return.</p>
+
+            <h3 class="sub">Why this is not enough</h3>
+            <ul>
+              <li><strong>Continuity.</strong> \(w_i \in [0,1]\) cannot encode "I either own this stock or I don't."
+                Real portfolios are <em>discrete</em>.</li>
+              <li><strong>No cardinality.</strong> Solution typically activates dozens of names — small-investor
+                portfolios cannot.</li>
+              <li><strong>Symmetric risk.</strong> \(\Sigma\) penalises upside and downside the same. Real investors
+                care about <em>downside</em>.</li>
+              <li><strong>No transaction costs.</strong> Trading isn't free.</li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 class="sub" style="margin-top:0">Why the continuous version is easy</h3>
+            <p>Markowitz with linear constraints is a <em>convex quadratic optimization problem</em>. Solvable in
+              polynomial time by interior-point methods (e.g. CVXPY + ECOS).</p>
+            <div class="math">\[ \nabla_w\; w^\top\Sigma w = 2\Sigma w \quad\Longrightarrow\quad w^* =
+              \tfrac{1}{2q}\Sigma^{-1}\mu \;\;(\text{unconstrained}) \]</div>
+            <p>This is also <em>why no quantum approach is interesting here</em>: continuous QP is solved. The quantum
+              question only opens up once we add discreteness.</p>
+
+            <hr class="rule" />
+            <h3 class="sub">A symbolic reading</h3>
+            <p>\(w^\top\Sigma w\) is the variance of the weighted return. \(\mu^\top w\) is its expectation. We are
+              pricing risk in units of return, with exchange rate \(q\).</p>
+          </div>
+        </div>
+      </div>
+      <div class="foot"><span class="marker">▍</span><span>Markowitz MV · the convex baseline we deliberately
+          break</span><span>04 / 26</span></div>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- SLIDE 5 - MULTI-OBJECTIVE                                         -->
+    <!-- ================================================================ -->
+    <section class="slide" data-id="05" data-section="Mathematics">
+      <div class="chrome">
+        <span class="id">05 · Three objectives</span>
+        <span class="crumbs"><span>Mathematics</span><span>Multi-objective formulation</span></span>
+      </div>
+      <div class="body">
+        <div class="eyebrow">Return, risk, diversification — all at once</div>
+        <h2 class="title">Scalarization: collapse three objectives into <em>one weighted sum</em>.</h2>
+
+        <div class="grid-2-7-5" style="margin-top:18px">
+          <div>
+            <h3 class="sub" style="margin-top:0">The three objectives, formally</h3>
+            <div class="math">\[ f_1(w) \;=\; \mu^{\top} w \quad\text{(expected return — maximize)} \]</div>
+            <div class="math">\[ f_2(w) \;=\; w^{\top}\Sigma\, w \quad\text{(variance / risk — minimize)} \]</div>
+            <div class="math">\[ f_3(w) \;=\; -\sum_{i=1}^{N} w_i^{2} \quad\text{(neg-Herfindahl, diversification —
+              maximize)} \]</div>
+
+            <p>The third term is the <em>Herfindahl–Hirschman concentration index</em>. Its minimum (most diversified)
+              is \(1/N\) when all weights are equal; its maximum (least diversified - concentrated) is \(1\) when one
+              asset has 100%
+              weight.</p>
+
+            <h3 class="sub">Scalarized objective</h3>
+            <div class="math label" data-label="(MO)">
+              \[ \min_{w}\;\; \underbrace{\lambda_2\, w^{\top}\Sigma w}_{\text{risk}} \;-\; \underbrace{\lambda_1\,
+              \mu^{\top} w}_{\text{return}} \;+\; \underbrace{\lambda_3 \sum_i w_i^2}_{\text{concentration}} \]
+            </div>
+            <p>With \(\lambda_1,\lambda_2,\lambda_3 \ge 0\) and a normalization (e.g. \(\sum_k\lambda_k=1\)), each
+              \((\lambda_1,\lambda_2,\lambda_3)\) traces a different point on the <em>Pareto front</em> in objective
+              space.</p>
+          </div>
+
+          <div>
+            <h3 class="sub" style="margin-top:0">Pareto front, schematically</h3>
+            <svg viewBox="0 0 360 320" class="tri">
+              <g font-family="IBM Plex Mono" font-size="10" fill="#7a7668">
+                <!-- triangle vertices -->
+                <polygon points="180,30 320,260 40,260" fill="none" stroke="#2e3648" />
+                <text x="180" y="22" text-anchor="middle" fill="#e8b04b">RETURN ↑</text>
+                <text x="324" y="278" text-anchor="end" fill="#5fd4e8">RISK ↓</text>
+                <text x="36" y="278" text-anchor="start" fill="#8ec07c">DIVERSIFICATION ↑</text>
+                <!-- mesh -->
+                <g stroke="#232a3a" stroke-width="0.5">
+                  <line x1="180" y1="30" x2="180" y2="260" />
+                  <line x1="40" y1="260" x2="320" y2="260" />
+                  <line x1="110" y1="145" x2="320" y2="260" />
+                  <line x1="250" y1="145" x2="40" y2="260" />
+                </g>
+                <!-- sample portfolios -->
+                <circle cx="180" cy="120" r="4" fill="#e8b04b" />
+                <text x="190" y="124">balanced λ=(.4,.4,.2)</text>
+                <circle cx="225" cy="200" r="4" fill="#5fd4e8" />
+                <text x="232" y="204">aggressive λ=(.7,.2,.1)</text>
+                <circle cx="120" cy="220" r="4" fill="#8ec07c" />
+                <text x="0" y="240" text-anchor="start">defensive λ=(.2,.6,.2)</text>
+              </g>
+            </svg>
+            <p style="font-size:12px; color:var(--bone-fade); margin-top:10px">No single "best" \(w^*\). The output is a
+              <em>family</em> of trade-offs; the investor's preference selects one.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="foot"><span class="marker">▍</span><span>Scalarization · weighted-sum tracing of the Pareto
+          front</span><span>05 / 26</span></div>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- SLIDE 6 - DISCRETIZATION                                          -->
+    <!-- ================================================================ -->
+    <section class="slide" data-id="06" data-section="Mathematics">
+      <div class="chrome">
+        <span class="id">06 · Going discrete</span>
+        <span class="crumbs"><span>Mathematics</span><span>Where it gets hard</span></span>
+      </div>
+      <div class="body">
+        <div class="eyebrow">The move that makes quantum interesting</div>
+        <h2 class="title">Replace \(w \in \mathbb{R}^N\) with binary <em>selectors</em> \(x \in \{0,1\}^N\).</h2>
+
+        <div class="grid-2" style="margin-top:18px">
+          <div>
+            <h3 class="sub" style="margin-top:0">Reformulation A — equal weight on selected assets</h3>
+            <p>If we commit to giving each chosen asset the same weight \(1/K\):</p>
+            <div class="math">\[ w_i \;=\; \frac{x_i}{K},\quad x_i \in \{0,1\},\quad \sum_{i=1}^{N} x_i = K \]</div>
+            <p>Plugging into the multi-objective scalarization:</p>
+            <div class="math label" data-label="(DMO)">
+              \[ \min_{x \in \{0,1\}^N}\; \frac{\lambda_2}{K^2}\,x^{\top}\Sigma\, x \;-\;
+              \frac{\lambda_1}{K}\,\mu^{\top} x \;+\; \frac{\lambda_3}{K^2}\sum_i x_i^2 \]
+            </div>
+            <p>Note that for \(x_i \in \{0,1\}\), \(x_i^2 = x_i\), so the diversification term becomes a constant under
+              the cardinality constraint and drops out — a <em>nice</em> consequence of the equal-weight choice.</p>
+          </div>
+          <div>
+            <h3 class="sub" style="margin-top:0">Reformulation B — bit-encoded weights</h3>
+            <p>For richer expressivity we can binary-expand \(w_i\) over \(B\) bits:</p>
+            <div class="math">\[ w_i \;=\; \sum_{b=0}^{B-1} \frac{2^b}{2^B - 1}\, x_{i,b},\quad x_{i,b}\in\{0,1\} \]
+            </div>
+            <p>This raises qubit count from \(N\) to \(NB\). For our 24-hour scope I picked <strong>Reformulation
+                A</strong> (one qubit per asset, equal weights).</p>
+
+            <h3 class="sub">Why this matters for quantum</h3>
+            <p>The discrete optimization problem is now a <em>quadratic unconstrained binary optimization</em> (QUBO)
+              once we move constraints into the objective via penalty terms. QUBO ↔ Ising ↔ quantum Hamiltonian — that's
+              the bridge.</p>
+            <p style="margin-top:10px"><span class="tag cyan">complexity</span> Cardinality-constrained portfolio
+              selection is <strong>NP-hard</strong> in general (Bienstock, 1996).</p>
+          </div>
+        </div>
+      </div>
+      <div class="foot"><span class="marker">▍</span><span>NP-hardness arrives with cardinality</span><span>06 /
+          26</span></div>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- SLIDE 7 - QUBO                                                     -->
+    <!-- ================================================================ -->
+    <section class="slide" data-id="07" data-section="Mathematics">
+      <div class="chrome">
+        <span class="id">07 · QUBO</span>
+        <span class="crumbs"><span>Mathematics</span><span>Quadratic Unconstrained Binary Optimization</span></span>
+      </div>
+      <div class="body">
+        <div class="eyebrow">From a constrained QP to QUBO</div>
+        <h2 class="title">Constraints → <em>penalty terms</em>. Penalty terms → entries in <code
+            style="font-family:var(--mono); color:var(--gold)">Q</code>.</h2>
+
+        <div class="grid-2" style="margin-top:18px; gap:28px;">
+          <div>
+            <h3 class="sub" style="margin-top:0">Definition</h3>
+            <div class="math label" data-label="(QUBO)">
+              \[ \min_{x \in \{0,1\}^N}\;\; x^{\top} Q\, x \]
+            </div>
+            <p>where \(Q \in \mathbb{R}^{N\times N}\). Linear terms live on the diagonal because \(x_i^2 = x_i\).</p>
+          </div>
+          <div>
+            <h3 class="sub" style="margin-top:0">Glover et al. (2018) — the penalty trick</h3>
+            <p>Any combinatorial problem with <em>quadratic</em> objective + constraints → QUBO:</p>
+            <div class="math">\[ \min f(x) \;\text{s.t.}\; g(x)=0 \;\Longrightarrow\; \min f(x) + P\cdot g(x)^2 \]</div>
+            <p>for sufficiently large \(P\). The art is choosing \(P\) — revisited in <strong>Trial 1</strong>.</p>
+          </div>
+        </div>
+
+        <hr class="rule" />
+
+        <h3 class="sub">Building Q for our portfolio problem</h3>
+        <p style="margin-bottom:6px">Starting from (DMO) and stacking penalties for cardinality, sector caps, and risk threshold:</p>
+
+        <div class="grid-2" style="gap:20px; align-items:start;">
+          <div>
+            <div class="math label" data-label="(QUBO-PORT)">
+              \[
+              \begin{aligned}
+              H(x) =\;&
+              \underset{\large\textcircled{\scriptsize 1}}{\tfrac{\lambda_2}{K^2}\,x^{\top}\Sigma\, x}
+              \;\underset{\large\textcircled{\scriptsize 2}}{-\; \tfrac{\lambda_1}{K}\,\mu^{\top} x} \\[6pt]
+              &+\;\underset{\large\textcircled{\scriptsize 3}}{P_K\!\left(\textstyle\sum_i x_i - K\right)^{\!2}} \\[6pt]
+              &+\; \underset{\large\textcircled{\scriptsize 4}}{\sum_{s\in\mathcal{S}} P_s\!\left(\textstyle\sum_{i\in s} x_i - L_s\right)^{\!2}} \\[6pt]
+              &+\; \underset{\large\textcircled{\scriptsize 5}}{P_R\,\max\!\bigl(0,\; \tfrac{x^{\top}\Sigma x}{K^2} - \theta \bigr)^{\!2}} \\[6pt]
+              &+\; \underset{\large\textcircled{\scriptsize 6}}{\sum_i c_i\, x_i}
+              \end{aligned}
+              \]
+            </div>
+          </div>
+          <div style="overflow-x:auto;">
+            <table style="width:100%; border-collapse:collapse; font-size:12.5px; font-family:var(--sans);">
+              <thead>
+                <tr style="border-bottom:2px solid var(--line); text-align:left;">
+                  <th style="padding:6px 8px; font-family:var(--mono); font-size:10px; letter-spacing:.15em; text-transform:uppercase; color:var(--bone-fade); width:28px;"></th>
+                  <th style="padding:6px 8px; font-family:var(--mono); font-size:10px; letter-spacing:.15em; text-transform:uppercase; color:var(--bone-fade);">Expression</th>
+                  <th style="padding:6px 8px; font-family:var(--mono); font-size:10px; letter-spacing:.15em; text-transform:uppercase; color:var(--bone-fade);">Role</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style="border-bottom:1px solid var(--line);">
+                  <td style="padding:5px 8px; color:var(--gold); font-weight:700;">①</td>
+                  <td style="padding:5px 8px; color:var(--bone);">\(\tfrac{\lambda_2}{K^2} x^\top \Sigma x\)</td>
+                  <td style="padding:5px 8px; color:var(--bone-dim);">Minimize variance (risk)</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--line);">
+                  <td style="padding:5px 8px; color:var(--gold); font-weight:700;">②</td>
+                  <td style="padding:5px 8px; color:var(--bone);">\(-\tfrac{\lambda_1}{K} \mu^\top x\)</td>
+                  <td style="padding:5px 8px; color:var(--bone-dim);">Maximize return (neg. for min)</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--line);">
+                  <td style="padding:5px 8px; color:var(--gold); font-weight:700;">③</td>
+                  <td style="padding:5px 8px; color:var(--bone);">\(P_K(\sum x_i - K)^2\)</td>
+                  <td style="padding:5px 8px; color:var(--bone-dim);">Pick exactly \(K\) assets</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--line);">
+                  <td style="padding:5px 8px; color:var(--gold); font-weight:700;">④</td>
+                  <td style="padding:5px 8px; color:var(--bone);">\(P_s(\sum_{i \in s} x_i - L_s)^2\)</td>
+                  <td style="padding:5px 8px; color:var(--bone-dim);">Cap assets per sector \(s\)</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--line);">
+                  <td style="padding:5px 8px; color:var(--gold); font-weight:700;">⑤</td>
+                  <td style="padding:5px 8px; color:var(--bone);">\(P_R \max(0, \cdot)^2\)</td>
+                  <td style="padding:5px 8px; color:var(--bone-dim);">Penalize risk &gt; \(\theta\)</td>
+                </tr>
+                <tr>
+                  <td style="padding:5px 8px; color:var(--gold); font-weight:700;">⑥</td>
+                  <td style="padding:5px 8px; color:var(--bone);">\(\sum c_i x_i\)</td>
+                  <td style="padding:5px 8px; color:var(--bone-dim);">Transaction costs</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <h3 class="sub" style="margin-top:14px">Reading off Q entry by entry</h3>
+        <p style="font-size:13px">Expanding squared penalties creates \(x_i x_j\) cross-terms. Since \(x_i^2 = x_i\), linear terms go on the diagonal:</p>
+
+        <div class="grid-2" style="margin-top:8px; gap:20px;">
+          <div>
+            <p style="margin-bottom:4px; font-size:12.5px;"><strong>Diagonal</strong> \(Q_{ii}\) <span style="color:var(--bone-fade)">(linear, \(x_i^2 = x_i\))</span></p>
+            <div class="math">
+              \[ Q_{ii} = \underbrace{\frac{\lambda_2 \sigma_{ii}}{K^2}}_{\text{own variance}} - \underbrace{\frac{\lambda_1 \mu_i}{K}}_{\text{own return}} + \underbrace{P_K(1 - 2K)}_{\text{cardinality}} + \underbrace{c_i}_{\text{cost}} + \cdots \]
+            </div>
+          </div>
+          <div>
+            <p style="margin-bottom:4px; font-size:12.5px;"><strong>Off-diagonal</strong> \(Q_{ij}\) <span style="color:var(--bone-fade)">(i ≠ j, cross-terms)</span></p>
+            <div class="math">
+              \[ Q_{ij} = \underbrace{\frac{2\lambda_2 \sigma_{ij}}{K^2}}_{\text{covariance}} + \underbrace{2P_K}_{\text{cardinality}} + \underbrace{2P_s \mathbf{1}_{i,j \in s}}_{\text{same sector}} + \cdots \]
+            </div>
+          </div>
+        </div>
+        <p style="font-size:12px; color:var(--bone-fade); margin-top:6px">Risk-threshold term is piecewise quadratic; implemented via slack variables to stay QUBO-compatible (Lucas, 2014).</p>
+      </div>
+      <div class="foot"><span class="marker">▍</span><span>Q assembled · Glover (2018) penalty method</span><span>07 /
+          26</span></div>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- SLIDE 8 - ISING                                                   -->
+    <!-- ================================================================ -->
+    <section class="slide" data-id="08" data-section="Mathematics">
+      <div class="chrome">
+        <span class="id">08 · Mapping QUBO → Ising</span>
+        <span class="crumbs"><span>Mathematics</span><span>Quantum Hamiltonian form</span></span>
+      </div>
+      <div class="body">
+        <div class="eyebrow">The bridge to qubits</div>
+        <h2 class="title">Substitute \( x_i = \tfrac{1 - z_i}{2} \), \( z_i \in \{-1,+1\} \). Now you have an <em>Ising
+            Hamiltonian</em>.</h2>
+
+        <div class="grid-2" style="margin-top:18px">
+          <div>
+            <h3 class="sub" style="margin-top:0">Algebra</h3>
+            <p>Substituting the spin variable \(z_i = 1 - 2x_i\):</p>
+            <div class="math">\[ x_i = \frac{1 - z_i}{2},\qquad x_i x_j = \frac{1 - z_i - z_j + z_i z_j}{4}. \]</div>
+            <p>Plugging these into \(x^\top Q x\) and collecting:</p>
+            <div class="math label" data-label="(ISING)">
+              \[ H \;=\; \sum_{i} h_i\, z_i \;+\; \sum_{i&lt;j} J_{ij}\, z_i z_j \;+\; \text{const} \]
+            </div>
+            <p>with</p>
+            <div class="math">\[ h_i = -\tfrac{1}{2}Q_{ii} - \tfrac{1}{4}\!\sum_{j \neq i} Q_{ij},\qquad J_{ij} =
+              \tfrac{1}{4} Q_{ij}. \]</div>
+            <p>The constant doesn't affect the optimum and is dropped.</p>
+          </div>
+          <div>
+            <h3 class="sub" style="margin-top:0">Promoting to operators</h3>
+            <p>Replace each classical spin \(z_i\) with the Pauli-Z operator \(Z_i\) acting on qubit \(i\):</p>
+            <div class="math">\[ \hat H_C \;=\; \sum_i h_i\, Z_i \;+\; \sum_{i&lt;j} J_{ij}\, Z_i Z_j. \]</div>
+            <p>This is the <em>cost Hamiltonian</em>. Its computational-basis eigenstates are the binary strings \(x\),
+              and their eigenvalues are the QUBO objective values.</p>
+            <p style="margin-top:10px">Finding the minimum-energy eigenstate of \(\hat H_C\) is <strong>exactly</strong>
+              the QUBO optimum. That equivalence is the entire premise of QAOA.</p>
+
+            <hr class="rule" />
+            <p style="font-size:12.5px"><span class="tag">terminology</span> &nbsp; "Ising model" comes from the 1925
+              statistical-physics model of magnetism (Ising). Same math, different context.</p>
+          </div>
+        </div>
+      </div>
+      <div class="foot"><span class="marker">▍</span><span>QUBO and Ising are the same problem in two
+          coordinates</span><span>08 / 26</span></div>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- SLIDE 9 - CLASSICAL BASELINE                                       -->
+    <!-- ================================================================ -->
+    <section class="slide" data-id="09" data-section="Methods">
+      <div class="chrome">
+        <span class="id">09 · Classical baseline</span>
+        <span class="crumbs"><span>Methods</span><span>What we compare against</span></span>
+      </div>
+      <div class="body">
+        <div class="eyebrow">Three classical methods, three roles</div>
+        <h2 class="title">An <em>honest</em> baseline. The quantum approach has to beat <em>this</em>.</h2>
+
+        <div class="grid-3" style="margin-top:18px">
+          <div class="card">
+            <div class="label">Method 01 · Brute force</div>
+            <h3 class="sub" style="margin-top:0">Exhaustive enumeration</h3>
+            <p>Iterate every \(x \in \{0,1\}^N\) with \(\sum x_i = K\). Evaluate \(x^\top Q x\). Keep the minimum.</p>
+            <p style="font-size:12.5px"><strong>Cost.</strong> \(\binom{N}{K}\) evaluations. Tractable up to \(N\approx
+              22\) on a laptop.</p>
+            <p style="font-size:12.5px"><strong>Role.</strong> <span class="tag gold">ground truth</span> for small
+              instances. Lets us measure approximation ratio of every other method.</p>
+          </div>
+          <div class="card">
+            <div class="label">Method 02 · Simulated annealing</div>
+            <h3 class="sub" style="margin-top:0">Metropolis-Hastings on Ising</h3>
+            <p>Start at a random feasible \(x\). At each step flip a random bit; accept with probability \(\min(1,
+              e^{-\Delta E / T})\). Cool \(T\) on a schedule.</p>
+            <p style="font-size:12.5px"><strong>Why include it.</strong> SA is widely cited as the <em>strongest fair
+                classical analogue</em> to quantum annealing. If our QAOA can't match SA, that's a strong signal.</p>
+            <p style="font-size:12.5px"><strong>Implementation.</strong> <code
+                class="mono">dimod.SimulatedAnnealingSampler</code> from D-Wave Ocean (open-source).</p>
+          </div>
+          <div class="card">
+            <div class="label">Method 03 · Convex relaxation</div>
+            <h3 class="sub" style="margin-top:0">Drop integrality, then round</h3>
+            <p>Solve the continuous QP \(\min_w w^\top\Sigma w - q\mu^\top w\) with \(\mathbf{1}^\top w = 1\), \(w \ge
+              0\) via CVXPY. Round to top-K assets.</p>
+            <p style="font-size:12.5px"><strong>Role.</strong> Captures what a "naive Markowitz user with a spreadsheet"
+              would do. Often very good when N is small.</p>
+            <p style="font-size:12.5px"><span class="tag">tool</span> CVXPY + ECOS</p>
+          </div>
+        </div>
+
+        <p style="margin-top:18px; font-size:13px; color:var(--bone-fade)">A note on rigor: brute force gives the exact
+          optimum on small N. SA is a stochastic anytime algorithm — I run it with a fixed total compute budget so the
+          comparison with QAOA is at parity in <em>energy evaluations</em>, not wall time (which would unfairly punish
+          the quantum simulator).</p>
+      </div>
+      <div class="foot"><span class="marker">▍</span><span>Three baselines: ground truth, fair analogue, weak
+          analogue</span><span>09 / 26</span></div>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- SLIDE 10 - QAOA INTRO                                              -->
+    <!-- ================================================================ -->
+    <section class="slide" data-id="10" data-section="Methods">
+      <div class="chrome">
+        <span class="id">10 · QAOA</span>
+        <span class="crumbs"><span>Methods</span><span>Quantum Approximate Optimization Algorithm</span></span>
+      </div>
+      <div class="body">
+        <div class="eyebrow">The quantum half of the hybrid</div>
+        <h2 class="title">QAOA: a <em>parameterized</em> circuit that approximates the Ising ground state.</h2>
+
+        <div class="grid-2-5-7" style="margin-top:18px">
+          <div>
+            <h3 class="sub" style="margin-top:0">Three ingredients</h3>
+            <p><strong>1. Cost Hamiltonian</strong> \(\hat H_C\) — encodes our QUBO (slide 08).</p>
+            <p><strong>2. Mixer Hamiltonian</strong> \(\hat H_M = \sum_i X_i\) — moves probability between bitstrings.
+            </p>
+            <p><strong>3. Initial state</strong> \(|s\rangle = |+\rangle^{\otimes N}\) — uniform superposition; the
+              maximum-eigenstate of \(\hat H_M\).</p>
+
+            <h3 class="sub">The ansatz</h3>
+            <div class="math label" data-label="(ANSATZ)">
+              \[ |\psi(\boldsymbol\beta,\boldsymbol\gamma)\rangle = \prod_{p=1}^{P}\, e^{-i\beta_p \hat H_M}\,
+              e^{-i\gamma_p \hat H_C}\,|s\rangle. \]
+            </div>
+            <p>Depth \(P\) layers. Each layer alternates a "phase separation" \(e^{-i\gamma \hat H_C}\) and a "mixing"
+              \(e^{-i\beta \hat H_M}\). The 2P real parameters \((\boldsymbol\beta,\boldsymbol\gamma)\) are tuned
+              classically.</p>
+
+            <h3 class="sub">Outer optimization</h3>
+            <div class="math">\[ \min_{\boldsymbol\beta,\boldsymbol\gamma}\; F(\boldsymbol\beta,\boldsymbol\gamma)
+              \;:=\; \langle\psi(\boldsymbol\beta,\boldsymbol\gamma)|\hat
+              H_C|\psi(\boldsymbol\beta,\boldsymbol\gamma)\rangle. \]</div>
+            <p>We sample bitstrings from \(|\psi\rangle\) and pick the lowest-energy observed sample as our solution.
+            </p>
+          </div>
+
+          <div>
+            <h3 class="sub" style="margin-top:0">A QAOA layer (P = 1), schematically</h3>
+            <svg viewBox="0 0 720 300" class="qcircuit" xmlns="http://www.w3.org/2000/svg">
+              <g font-family="IBM Plex Mono" font-size="11" fill="#ece6d6">
+                <!-- 4-qubit lines -->
+                <g stroke="#2e3648" stroke-width="1">
+                  <line x1="80" y1="60" x2="700" y2="60" />
+                  <line x1="80" y1="115" x2="700" y2="115" />
+                  <line x1="80" y1="170" x2="700" y2="170" />
+                  <line x1="80" y1="225" x2="700" y2="225" />
+                </g>
+                <text x="40" y="64">|q₀⟩</text>
+                <text x="40" y="119">|q₁⟩</text>
+                <text x="40" y="174">|q₂⟩</text>
+                <text x="40" y="229">|q₃⟩</text>
+
+                <!-- Hadamards (init) -->
+                <g>
+                  <rect x="100" y="48" width="28" height="24" fill="#161b27" stroke="#5fd4e8" />
+                  <text x="114" y="64" text-anchor="middle" fill="#5fd4e8">H</text>
+                  <rect x="100" y="103" width="28" height="24" fill="#161b27" stroke="#5fd4e8" />
+                  <text x="114" y="119" text-anchor="middle" fill="#5fd4e8">H</text>
+                  <rect x="100" y="158" width="28" height="24" fill="#161b27" stroke="#5fd4e8" />
+                  <text x="114" y="174" text-anchor="middle" fill="#5fd4e8">H</text>
+                  <rect x="100" y="213" width="28" height="24" fill="#161b27" stroke="#5fd4e8" />
+                  <text x="114" y="229" text-anchor="middle" fill="#5fd4e8">H</text>
+                </g>
+                <text x="114" y="22" text-anchor="middle" fill="#7a7668" font-size="9" letter-spacing="2">|+⟩⊗N</text>
+
+                <!-- Cost Hamiltonian block (γ) - widened to fit all 6 RZZ couplings -->
+                <rect x="155" y="34" width="265" height="206" fill="rgba(232,176,75,0.04)" stroke="#b78429"
+                  stroke-dasharray="4 3" />
+                <text x="287" y="20" text-anchor="middle" fill="#e8b04b" font-size="10"
+                  letter-spacing="3">e^(–iγH_C)</text>
+
+                <!-- Single-Z rotations: RZ(2γh_i), one per qubit -->
+                <g>
+                  <rect x="170" y="48" width="36" height="24" fill="#161b27" stroke="#e8b04b" />
+                  <text x="188" y="64" text-anchor="middle" fill="#e8b04b">RZ</text>
+                  <rect x="170" y="103" width="36" height="24" fill="#161b27" stroke="#e8b04b" />
+                  <text x="188" y="119" text-anchor="middle" fill="#e8b04b">RZ</text>
+                  <rect x="170" y="158" width="36" height="24" fill="#161b27" stroke="#e8b04b" />
+                  <text x="188" y="174" text-anchor="middle" fill="#e8b04b">RZ</text>
+                  <rect x="170" y="213" width="36" height="24" fill="#161b27" stroke="#e8b04b" />
+                  <text x="188" y="229" text-anchor="middle" fill="#e8b04b">RZ</text>
+                </g>
+
+                <!-- ZZ couplings: RZZ(2γJ_ij), ALL 6 pairs for fully-connected QUBO -->
+                <g stroke="#e8b04b" stroke-width="1.4" fill="#e8b04b">
+                  <!-- (q0,q1) -->
+                  <circle cx="232" cy="60" r="3.5" />
+                  <circle cx="232" cy="115" r="3.5" />
+                  <line x1="232" y1="60" x2="232" y2="115" />
+                  <!-- (q1,q2) -->
+                  <circle cx="262" cy="115" r="3.5" />
+                  <circle cx="262" cy="170" r="3.5" />
+                  <line x1="262" y1="115" x2="262" y2="170" />
+                  <!-- (q2,q3) -->
+                  <circle cx="292" cy="170" r="3.5" />
+                  <circle cx="292" cy="225" r="3.5" />
+                  <line x1="292" y1="170" x2="292" y2="225" />
+                  <!-- (q0,q2) -->
+                  <circle cx="322" cy="60" r="3.5" />
+                  <circle cx="322" cy="170" r="3.5" />
+                  <line x1="322" y1="60" x2="322" y2="170" />
+                  <!-- (q1,q3) -->
+                  <circle cx="352" cy="115" r="3.5" />
+                  <circle cx="352" cy="225" r="3.5" />
+                  <line x1="352" y1="115" x2="352" y2="225" />
+                  <!-- (q0,q3) -->
+                  <circle cx="382" cy="60" r="3.5" />
+                  <circle cx="382" cy="225" r="3.5" />
+                  <line x1="382" y1="60" x2="382" y2="225" />
+                </g>
+
+                <!-- Sub-block captions, sized to NOT collide with H_C / H_M titles above -->
+                <text x="188" y="252" text-anchor="middle" fill="#7a7668" font-size="9" letter-spacing="1">RZ(2γhᵢ)</text>
+                <text x="307" y="252" text-anchor="middle" fill="#7a7668" font-size="9" letter-spacing="1">RZZ(2γJᵢⱼ) · 6 pairs</text>
+
+                <!-- Mixer block (β) -->
+                <rect x="450" y="34" width="170" height="206" fill="rgba(95,212,232,0.04)" stroke="#2c8b9c"
+                  stroke-dasharray="4 3" />
+                <text x="535" y="20" text-anchor="middle" fill="#5fd4e8" font-size="10"
+                  letter-spacing="3">e^(–iβH_M)</text>
+                <g>
+                  <rect x="515" y="48" width="36" height="24" fill="#161b27" stroke="#5fd4e8" />
+                  <text x="533" y="64" text-anchor="middle" fill="#5fd4e8">RX</text>
+                  <rect x="515" y="103" width="36" height="24" fill="#161b27" stroke="#5fd4e8" />
+                  <text x="533" y="119" text-anchor="middle" fill="#5fd4e8">RX</text>
+                  <rect x="515" y="158" width="36" height="24" fill="#161b27" stroke="#5fd4e8" />
+                  <text x="533" y="174" text-anchor="middle" fill="#5fd4e8">RX</text>
+                  <rect x="515" y="213" width="36" height="24" fill="#161b27" stroke="#5fd4e8" />
+                  <text x="533" y="229" text-anchor="middle" fill="#5fd4e8">RX</text>
+                </g>
+                <text x="533" y="252" text-anchor="middle" fill="#7a7668" font-size="9" letter-spacing="1">RX(2β)</text>
+
+                <!-- Measurement -->
+                <g>
+                  <rect x="650" y="48" width="32" height="24" fill="#161b27" stroke="#7a7668" />
+                  <text x="666" y="64" text-anchor="middle" fill="#ece6d6">M</text>
+                  <rect x="650" y="103" width="32" height="24" fill="#161b27" stroke="#7a7668" />
+                  <text x="666" y="119" text-anchor="middle" fill="#ece6d6">M</text>
+                  <rect x="650" y="158" width="32" height="24" fill="#161b27" stroke="#7a7668" />
+                  <text x="666" y="174" text-anchor="middle" fill="#ece6d6">M</text>
+                  <rect x="650" y="213" width="32" height="24" fill="#161b27" stroke="#7a7668" />
+                  <text x="666" y="229" text-anchor="middle" fill="#ece6d6">M</text>
+                </g>
+
+                <text x="360" y="285" text-anchor="middle" fill="#7a7668" font-size="9" letter-spacing="2">REPEAT P
+                  TIMES · OUTER LOOP TUNES (β,γ) WITH SCIPY/COBYLA</text>
+              </g>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <div class="foot"><span class="marker">▍</span><span>QAOA · Farhi, Goldstone, Gutmann (2014)</span><span>10 /
+          26</span></div>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- SLIDE 11 - WHY P MATTERS / GUARANTEE                              -->
+    <!-- ================================================================ -->
+    <section class="slide" data-id="11" data-section="Methods">
+      <div class="chrome">
+        <span class="id">11 · Why depth matters</span>
+        <span class="crumbs"><span>Methods</span><span>The promise &amp; the catch</span></span>
+      </div>
+      <div class="body">
+        <div class="eyebrow">The theoretical guarantee, and why it doesn't help us yet</div>
+        <h2 class="title">As \(P\to\infty\), QAOA recovers the <em>optimum</em>. At finite \(P\), it's just a heuristic.
+        </h2>
+
+        <div class="grid-2" style="margin-top:18px">
+          <div>
+            <h3 class="sub" style="margin-top:0">The adiabatic-limit guarantee</h3>
+            <p>QAOA is a Trotterized adiabatic evolution between \(\hat H_M\) and \(\hat H_C\). In the \(P\to\infty\)
+              limit with appropriate \((\boldsymbol\beta,\boldsymbol\gamma)\), the state converges to the ground state
+              of \(\hat H_C\) — i.e. the global QUBO minimum.</p>
+            <div class="math">\[ \lim_{P\to\infty}\; \min_{\boldsymbol\beta,\boldsymbol\gamma}\; \langle\psi|\hat
+              H_C|\psi\rangle \;=\; \min_x\; x^\top Q\, x. \]</div>
+            <p>This is the formal reason QAOA is interesting at all.</p>
+
+            <h3 class="sub">Approximation ratio at finite P</h3>
+            <p>For the Max-Cut problem on 3-regular graphs, Farhi–Goldstone–Gutmann (2014) proved \(P=1\) gives ratio ≥
+              0.6924. Bravyi et al. (2020) showed depth-\(P\) QAOA cannot beat <em>certain</em> classical algorithms on
+              bounded-degree instances unless \(P\) grows with \(N\).</p>
+          </div>
+          <div>
+            <h3 class="sub" style="margin-top:0">What this means in practice</h3>
+            <ul>
+              <li><strong>Larger P helps</strong>, but with diminishing returns.</li>
+              <li><strong>Larger P hurts</strong>, because (i) the parameter landscape becomes harder (barren plateaus,
+                McClean 2018), (ii) circuit depth grows, exposing the run to more noise on real hardware.</li>
+              <li>So there is a sweet spot, usually \(P \in \{2,3,4\}\) on NISQ.</li>
+            </ul>
+
+            <h3 class="sub">My choice</h3>
+            <p>I tested \(P \in \{1,2,3,4,5\}\). Results in Slide 19. Spoiler: \(P=3\) was best on my instances, beyond
+              which optimization stalled.</p>
+
+            <hr class="rule" />
+            <p><span class="tag rose">caveat</span> The guarantee is asymptotic and existential. It does not say "QAOA
+              is faster than the best classical algorithm." It only says "QAOA can in principle solve the problem given
+              enough depth."</p>
+          </div>
+        </div>
+      </div>
+      <div class="foot"><span class="marker">▍</span><span>Adiabatic limit · finite-P heuristic · barren
+          plateaus</span><span>11 / 26</span></div>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- SLIDE 12 - IMPLEMENTATION                                         -->
+    <!-- ================================================================ -->
+    <section class="slide" data-id="12" data-section="Methods">
+      <div class="chrome">
+        <span class="id">12 · Implementation</span>
+        <span class="crumbs"><span>Methods</span><span>Code organization</span></span>
+      </div>
+      <div class="body">
+        <div class="eyebrow">The actual prototype</div>
+        <h2 class="title">Stack: Qiskit + NumPy. <em>Aer statevector</em> simulator. SciPy COBYLA outer.</h2>
+
+        <div class="grid-2" style="margin-top:18px">
+          <div>
+            <h3 class="sub" style="margin-top:0">Build the cost Hamiltonian</h3>
+            <pre class="code"><span class="c"># 1. Build Q from Σ, μ and the penalty stack</span>
+<span class="k">def</span> <span class="f">build_qubo</span>(mu, Sigma, K, lambdas, penalties, sectors=None):
+    <span class="n">N</span> = len(mu)
+    <span class="n">Q</span> = np.zeros((N, N))
+    <span class="c"># risk term (diag + off-diag)</span>
+    Q += (lambdas[<span class="s">'risk'</span>] / K**2) * Sigma
+    <span class="c"># return term (linear → diagonal)</span>
+    np.fill_diagonal(Q, np.diag(Q) - (lambdas[<span class="s">'ret'</span>] / K) * mu)
+    <span class="c"># cardinality penalty: P_K · (Σx − K)²</span>
+    P_K = penalties[<span class="s">'card'</span>]
+    Q += P_K * (np.ones((N, N)) - 2*K*np.eye(N))
+    <span class="k">return</span> Q
+</pre>
+
+            <h3 class="sub">Convert Q to a Pauli operator</h3>
+            <pre class="code"><span class="k">from</span> qiskit.quantum_info <span class="k">import</span> SparsePauliOp
+
+<span class="k">def</span> <span class="f">qubo_to_ising</span>(Q):
+    <span class="n">N</span> = Q.shape[0]
+    paulis, coeffs = [], []
+    <span class="k">for</span> i <span class="k">in</span> range(N):
+        z = [<span class="s">'I'</span>]*N; z[i] = <span class="s">'Z'</span>
+        h_i = -0.5*Q[i,i] - 0.25*sum(Q[i,j] <span class="k">for</span> j <span class="k">in</span> range(N) <span class="k">if</span> j!=i)
+        paulis.append(<span class="s">''</span>.join(z)); coeffs.append(h_i)
+        <span class="k">for</span> j <span class="k">in</span> range(i+1, N):
+            zz = [<span class="s">'I'</span>]*N; zz[i]=zz[j]=<span class="s">'Z'</span>
+            paulis.append(<span class="s">''</span>.join(zz)); coeffs.append(0.25*Q[i,j])
+    <span class="k">return</span> SparsePauliOp(paulis, coeffs=coeffs)
+</pre>
+          </div>
+          <div>
+            <h3 class="sub" style="margin-top:0">QAOA circuit + outer loop</h3>
+            <pre class="code"><span class="k">from</span> qiskit.circuit.library <span class="k">import</span> QAOAAnsatz
+<span class="k">from</span> qiskit.primitives <span class="k">import</span> StatevectorEstimator
+<span class="k">from</span> scipy.optimize <span class="k">import</span> minimize
+
+H_C    = qubo_to_ising(Q)
+ansatz = QAOAAnsatz(cost_operator=H_C, reps=P)
+estim  = StatevectorEstimator()
+
+<span class="k">def</span> <span class="f">energy</span>(params):
+    job = estim.run([(ansatz, H_C, params)])
+    <span class="k">return</span> job.result()[0].data.evs
+
+x0  = np.concatenate([np.linspace(0, 1, P),    <span class="c"># γ_p</span>
+                      np.linspace(1, 0, P)])   <span class="c"># β_p</span>
+res = minimize(energy, x0, method=<span class="s">'COBYLA'</span>,
+               options={<span class="s">'maxiter'</span>: 200, <span class="s">'rhobeg'</span>: 0.3})
+</pre>
+
+            <h3 class="sub">Sample &amp; decode</h3>
+            <pre class="code"><span class="k">from</span> qiskit.primitives <span class="k">import</span> StatevectorSampler
+
+best = ansatz.assign_parameters(res.x)
+best.measure_all()
+samples = StatevectorSampler().run([best], shots=8192).result()[0].data.meas
+x_star  = min(samples.get_counts(),
+              key=<span class="k">lambda</span> bs: bitstring_energy(bs, Q))
+</pre>
+
+            <p style="font-size:12.5px; margin-top:10px">Full code in <code class="mono">prototype.py</code>; this slide
+              shows the load-bearing 30 lines. The penalty schedule, mixer choice, and warm-starting are all
+              parameterised.</p>
+          </div>
+        </div>
+      </div>
+      <div class="foot"><span class="marker">▍</span><span>Qiskit 1.x · primitives · COBYLA</span><span>12 / 26</span>
+      </div>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- SLIDE 13 - TRIAL 1                                                 -->
+    <!-- ================================================================ -->
+    <section class="slide" data-id="13" data-section="Trial &amp; Error">
+      <div class="chrome">
+        <span class="id">13 · Trial 01</span>
+        <span class="crumbs"><span>Trial &amp; Error</span><span>Penalty too small</span></span>
+      </div>
+      <div class="body">
+        <div class="eyebrow">Failure 1 of 5 — the easy mistake</div>
+
+        <div class="trial-head">
+          <div class="num">01</div>
+          <div class="head">
+            <h2 class="title" style="margin:0">Penalties were too small. The optimizer ignored the constraints.</h2>
+            <p style="margin-top:6px"><span class="tag rose">symptom</span> &nbsp; QAOA returned an <em>"optimum"</em>
+              with the wrong number of selected assets.</p>
+          </div>
+        </div>
+
+        <div class="grid-2" style="margin-top:14px">
+          <div>
+            <h3 class="sub" style="margin-top:0">What I did</h3>
+            <p>For a small instance (N=8, K=4, scalarized objective on the order of 0.1), I set \(P_K = 1\) — same order
+              of magnitude as the objective.</p>
+            <p>Result: QAOA happily returned a portfolio of 6 assets. The cardinality term \(P_K(\sum x_i - K)^2 = 1
+              \cdot 4 = 4\) was easily outweighed by the return-and-risk gains from picking two extra strong-Sharpe
+              assets.</p>
+
+            <div class="symptom">
+              <strong>Diagnostic.</strong> I plotted the energy of every basis state. The true minimum (with cardinality
+              4) was the <em>fourth-best</em> energy. The first three minima all had cardinality 5 or 6.
+            </div>
+          </div>
+          <div>
+            <h3 class="sub" style="margin-top:0">What I learned (Lucas, 2014)</h3>
+            <p>The penalty \(P\) must dominate the objective's <em>swing</em>. A common heuristic:</p>
+            <div class="math">\[ P \;>\; \max_x f(x) - \min_x f(x). \]</div>
+            <p>For our QUBO this means \(P_K\) at least one or two orders of magnitude larger than
+              \(\|Q_{\text{obj}}\|_F\). I switched to \(P_K = 50 \cdot \|\Sigma\|_F\,/\,K^2\), which made constraint
+              violation strictly worse than any objective gain.</p>
+
+            <div class="trial-fix">
+              <strong>Fix.</strong> Adaptive penalty schedule: start \(P_K\) at \(2 \times \text{obj. swing}\) and
+              increase by 2× each outer iteration that returns an infeasible solution. Converged in 3 rounds.
+            </div>
+
+            <p style="margin-top:10px"><span class="tag">read</span> Lucas, <em>Ising formulations of many NP
+                problems</em>, 2014.</p>
+          </div>
+        </div>
+      </div>
+      <div class="foot"><span class="marker">▍</span><span>Trial 01 · Penalty under-weighting</span><span>13 / 26</span>
+      </div>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- SLIDE 14 - TRIAL 2                                                 -->
+    <!-- ================================================================ -->
+    <section class="slide" data-id="14" data-section="Trial &amp; Error">
+      <div class="chrome">
+        <span class="id">14 · Trial 02</span>
+        <span class="crumbs"><span>Trial &amp; Error</span><span>Penalty too large</span></span>
+      </div>
+      <div class="body">
+        <div class="eyebrow">Failure 2 of 5 — overcorrecting from Trial 01</div>
+
+        <div class="trial-head">
+          <div class="num">02</div>
+          <div class="head">
+            <h2 class="title" style="margin:0">Then I overshot. The landscape became <em>spiky</em>, optimization died.
+            </h2>
+            <p style="margin-top:6px"><span class="tag rose">symptom</span> &nbsp; QAOA energy plateaued instantly at
+              the random-init value.</p>
+          </div>
+        </div>
+
+        <div class="grid-2-7-5" style="margin-top:14px">
+          <div>
+            <h3 class="sub" style="margin-top:0">What went wrong</h3>
+            <p>Reacting to Trial 01, I jumped to \(P_K = 10^4\). Now feasibility was rock-solid, but the
+              \(F(\boldsymbol\beta,\boldsymbol\gamma)\) landscape was dominated by the penalty term — a steep spiked
+              function with sharp ridges between basins.</p>
+            <p>COBYLA, a derivative-free trust-region method, oscillated and made no progress. The original objective
+              contributions (risk, return) were buried under the penalty surface.</p>
+
+            <div class="symptom">
+              <strong>Diagnostic.</strong> Plotting \(F(\beta,\gamma)\) for P=1: the surface had near-vertical walls
+              between feasible and infeasible regions. Optimizer's step size was either too small to escape a ridge or
+              too large to land in a basin.
+            </div>
+
+            <h3 class="sub">Fix</h3>
+            <p>Penalty calibration to the <em>specific instance</em>:</p>
+            <div class="math">\[ P_K^* \;=\; 1.5 \cdot \bigl(\max_x f_{\text{obj}}(x) - \min_x f_{\text{obj}}(x)\bigr)
+              \]</div>
+            <p>Not too small (Trial 01), not too large (Trial 02). I estimated the swing using a 1024-sample Monte-Carlo
+              upper bound — cheap and close enough.</p>
+
+            <div class="trial-fix">
+              <strong>Outcome.</strong> Energy curves became smooth again. P=1 QAOA recovered ~91% approximation ratio
+              on the (N=8, K=4) instance.
+            </div>
+          </div>
+          <div>
+            <h3 class="sub" style="margin-top:0">Landscape sketch — penalty regimes</h3>
+            <svg viewBox="0 0 280 320" class="chart" style="aspect-ratio:auto">
+              <g font-family="IBM Plex Mono" font-size="9" fill="#7a7668">
+                <text x="14" y="22">PENALTY P_K</text>
+                <text x="14" y="38" fill="#e8746a">▲ too small (Trial 01)</text>
+                <path d="M14,80 C70,60 130,150 220,100" stroke="#e8746a" fill="none" stroke-width="1.4" />
+                <text x="225" y="110" fill="#e8746a">infeasible</text>
+
+                <text x="14" y="148" fill="#8ec07c">▲ just right</text>
+                <path d="M14,200 C70,168 130,210 220,180" stroke="#8ec07c" fill="none" stroke-width="1.4" />
+                <text x="225" y="190" fill="#8ec07c">smooth</text>
+
+                <text x="14" y="240" fill="#5fd4e8">▲ too large (Trial 02)</text>
+                <path d="M14,290 L60,290 L60,260 L80,260 L80,295 L120,295 L120,250 L150,250 L150,300 L220,300"
+                  stroke="#5fd4e8" fill="none" stroke-width="1.4" />
+                <text x="225" y="298" fill="#5fd4e8">spiky</text>
+              </g>
+            </svg>
+            <p style="font-size:11.5px; color:var(--bone-fade); margin-top:8px">Stylised cross-section of
+              \(F(\boldsymbol\beta,\boldsymbol\gamma)\) along a 1-D slice for three penalty regimes.</p>
+          </div>
+        </div>
+      </div>
+      <div class="foot"><span class="marker">▍</span><span>Trial 02 · Penalty over-weighting</span><span>14 / 26</span>
+      </div>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- SLIDE 15 - TRIAL 3                                                 -->
+    <!-- ================================================================ -->
+    <section class="slide" data-id="15" data-section="Trial &amp; Error">
+      <div class="chrome">
+        <span class="id">15 · Trial 03</span>
+        <span class="crumbs"><span>Trial &amp; Error</span><span>Optimizer choice</span></span>
+      </div>
+      <div class="body">
+        <div class="eyebrow">Failure 3 of 5 — the outer loop is half the algorithm</div>
+
+        <div class="trial-head">
+          <div class="num">03</div>
+          <div class="head">
+            <h2 class="title" style="margin:0">COBYLA got stuck. Then SPSA undershot. Then L-BFGS-B with multistart
+              worked.</h2>
+            <p style="margin-top:6px"><span class="tag rose">symptom</span> &nbsp; SPSA on noiseless statevector
+              barely moves the trajectory — drop ≈ 0.85 from random init vs ≈ 17 for L-BFGS-B on the same problem.</p>
+          </div>
+        </div>
+
+        <div class="grid-2-5-7" style="margin-top:14px">
+          <div>
+            <h3 class="sub" style="margin-top:0">Three optimizers, three behaviours</h3>
+            <ul>
+              <li><strong>COBYLA</strong> (gradient-free, trust-region). Fast on smooth landscapes; brittle near
+                non-differentiable ridges.</li>
+              <li><strong>SPSA</strong> (Simultaneous Perturbation Stochastic Approximation). Designed for noisy quantum
+                hardware; on a noiseless statevector sim it underuses information and drifts.</li>
+              <li><strong>L-BFGS-B</strong> with parameter-shift gradients + 8 random restarts. Slow per call but
+                reliable.</li>
+            </ul>
+
+            <h3 class="sub">Lesson</h3>
+            <p>The "right" optimizer depends on whether your evaluations are noisy. On simulator → use gradient-based.
+              On real hardware → SPSA or COBYLA.</p>
+            <p>I parameter-shifted the cost gradient analytically:</p>
+            <div class="math">\[ \frac{\partial F}{\partial \theta_k} \;=\; \tfrac{1}{2}\bigl[F(\theta +
+              \tfrac{\pi}{2}\mathbf{e}_k) - F(\theta - \tfrac{\pi}{2}\mathbf{e}_k)\bigr] \]</div>
+            <p>which is exact for parameterized Pauli rotations (Mitarai et al. 2018, Schuld et al. 2019).</p>
+          </div>
+          <div>
+            <h3 class="sub" style="margin-top:0">Optimizer comparison · N=10, P=2</h3>
+            <!-- Live plot — generated by `python -m scripts.generate_deck_plots`. -->
+            <img src="artifacts/deck_plots/slide_15_optimizers.svg"
+                 alt="Optimizer comparison · COBYLA / SPSA / L-BFGS-B"
+                 style="width:100%; height:auto; display:block; max-height:340px; object-fit:contain" />
+            <p style="font-size:11.5px; color:var(--bone-fade); margin-top:8px">Live plot — best-restart energy
+              trajectory at N=10, K=4, p=2, regenerated by <code>scripts/generate_deck_plots.py</code>. All three
+              optimizers eventually decode to the brute optimum (cost = −0.3714, ratio 1.000) via the top-M sampler,
+              but the *trajectory* tells the story: L-BFGS-B (gold) dives ~17 below random init, COBYLA (rose)
+              tracks within 1–2 of L-BFGS-B, and SPSA (cyan) drifts because finite-difference perturbation noise is
+              the wrong tool for a noiseless surface.</p>
+          </div>
+        </div>
+      </div>
+      <div class="foot"><span class="marker">▍</span><span>Trial 03 · Outer-loop optimizer matters as much as the
+          ansatz</span><span>15 / 26</span></div>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- SLIDE 16 - TRIAL 4                                                 -->
+    <!-- ================================================================ -->
+    <section class="slide" data-id="16" data-section="Trial &amp; Error">
+      <div class="chrome">
+        <span class="id">16 · Trial 04</span>
+        <span class="crumbs"><span>Trial &amp; Error</span><span>Barren plateaus</span></span>
+      </div>
+      <div class="body">
+        <div class="eyebrow">Failure 4 of 5 — the deeper-circuit fallacy</div>
+
+        <div class="trial-head">
+          <div class="num">04</div>
+          <div class="head">
+            <h2 class="title" style="margin:0">Pushed P to 5. Gradients <em>vanished</em>. Welcome to barren plateaus.
+            </h2>
+            <p style="margin-top:6px"><span class="tag rose">symptom</span> &nbsp; \(\|\nabla F\| < 10^{-6}\) at random
+                init for N=14, P≥4.</p>
+          </div>
+        </div>
+
+        <div class="grid-2" style="margin-top:14px">
+          <div>
+            <h3 class="sub" style="margin-top:0">What McClean et al. (2018) actually says</h3>
+            <p>For random ansatzes on \(n\) qubits, the variance of any partial derivative decays exponentially:</p>
+            <div class="math">\[ \mathrm{Var}\!\left[\frac{\partial F}{\partial \theta_k}\right] \;\propto\;
+              \frac{1}{\,2^{n}\,}. \]</div>
+            <p>This means at moderate qubit count, gradients are practically zero almost everywhere — the cost surface
+              is a flat plateau with one tiny minimum somewhere.</p>
+            <p>For QAOA specifically, this happens once \(P\) is large enough that the ansatz is "expressive enough to
+              be random" — empirically around \(P\gtrsim 0.5\,n\) on dense problems.</p>
+          </div>
+          <div>
+            <h3 class="sub" style="margin-top:0">Three things that helped</h3>
+            <ol>
+              <li><strong>Layer-wise warm start.</strong> Train P=1, then initialize P=2 with the P=1 solution and add a
+                small layer. Continue. (Skolik et al. 2021)</li>
+              <li><strong>FOURIER initialization.</strong> Parameterize \(\boldsymbol\gamma, \boldsymbol\beta\) by a
+                Fourier series in P; transfer parameters across depths smoothly (Zhou et al. 2020).</li>
+              <li><strong>Cap the depth.</strong> P=3 was a useful sweet spot for my N=10–16 instances. Past that, gains
+                were marginal and barren-plateau risk grew.</li>
+            </ol>
+
+            <div class="trial-fix">
+              <strong>Outcome.</strong> P=3 with FOURIER warm start converged in ~80 outer iterations, vs ~250 with
+              cold-start at P=3 directly.
+            </div>
+
+            <hr class="rule" />
+            <p style="font-size:12.5px"><span class="tag">read</span> McClean, Boixo, Smelyanskiy, Babbush, Neven,
+              <em>Barren plateaus in quantum neural network training landscapes</em>, Nature Comms (2018).
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="foot"><span class="marker">▍</span><span>Trial 04 · The deeper-circuit fallacy</span><span>16 /
+          26</span></div>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- SLIDE 17 - TRIAL 5                                                 -->
+    <!-- ================================================================ -->
+    <section class="slide" data-id="17" data-section="Trial &amp; Error">
+      <div class="chrome">
+        <span class="id">17 · Trial 05</span>
+        <span class="crumbs"><span>Trial &amp; Error</span><span>Mixer choice for hard constraints</span></span>
+      </div>
+      <div class="body">
+        <div class="eyebrow">Failure 5 of 5 — the mixer wasn't preserving feasibility</div>
+
+        <div class="trial-head">
+          <div class="num">05</div>
+          <div class="head">
+            <h2 class="title" style="margin:0">The standard X-mixer wastes amplitude on <em>infeasible</em> bitstrings.
+            </h2>
+            <p style="margin-top:6px"><span class="tag rose">symptom</span> &nbsp; ~60% of measured shots had
+              cardinality ≠ K, even after good outer-loop convergence.</p>
+          </div>
+        </div>
+
+        <div class="grid-2-7-5" style="margin-top:14px">
+          <div>
+            <h3 class="sub" style="margin-top:0">Diagnosis</h3>
+            <p>The transverse-field mixer \(\hat H_M = \sum_i X_i\) is ergodic over <em>all</em> \(2^N\) bitstrings.
+              With cardinality enforced only via a soft penalty, the QAOA state has nontrivial weight on every
+              cardinality. The penalty makes those low-amplitude, but they're still <em>there</em>.</p>
+            <p>Probability of measuring a feasible bitstring scales roughly as \(\binom{N}{K}/2^N\) for a uniform-ish
+              state — terrible for large N.</p>
+
+            <h3 class="sub">Two remedies I tried</h3>
+            <p><strong>1. XY-mixer (Wang et al. 2020).</strong> Replace \(X_i\) with</p>
+            <div class="math">\[ H_M^{XY} \;=\; \tfrac{1}{2}\sum_{(i,j)\in\text{ring}} (X_i X_j + Y_i Y_j). \]</div>
+            <p>This conserves \(\sum_i \hat n_i\) — Hamming weight is preserved exactly. Initialize with a Dicke state
+              \(|D_K^N\rangle\) (uniform superposition of all K-Hamming-weight strings). Now QAOA <em>cannot</em> leave
+              the feasible subspace.</p>
+
+            <p><strong>2. Grover mixer (Bärtschi & Eidenbenz 2020).</strong> Use \(H_M = -|s\rangle\langle s|\) where
+              \(|s\rangle\) is the uniform superposition over feasible states. Equivalent to Grover Adaptive Search
+              inside QAOA.</p>
+          </div>
+          <div>
+            <h3 class="sub" style="margin-top:0">Trade-off</h3>
+            <p>XY-mixer gave 100% feasible shots but doubled circuit depth per layer. Net effect at P=2: solution
+              quality up, but each call ~2.3× slower in simulation.</p>
+
+            <p>Grover mixer was even cleaner conceptually but the Dicke-state preparation circuit was complex enough to
+              dominate the runtime budget at our N.</p>
+
+            <div class="trial-fix">
+              <strong>Final choice.</strong> XY-mixer + Dicke initial state for the headline runs. Standard X-mixer for
+              the fast scans during hyperparameter search.
+            </div>
+
+            <hr class="rule" />
+            <p style="font-size:12.5px"><span class="tag">read</span> Wang, Hadfield, Jiang, Rieffel (2020). Bärtschi
+              &amp; Eidenbenz (2020).</p>
+          </div>
+        </div>
+      </div>
+      <div class="foot"><span class="marker">▍</span><span>Trial 05 · Mixer engineering for hard
+          constraints</span><span>17 / 26</span></div>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- SLIDE 18 - PENALTY PLAYGROUND                                      -->
+    <!-- ================================================================ -->
+    <section class="slide" data-id="18" data-section="Trial &amp; Error">
+      <div class="chrome">
+        <span class="id">18 · Live: penalty calibration</span>
+        <span class="crumbs"><span>Trial &amp; Error</span><span>Interactive demo</span></span>
+      </div>
+      <div class="body">
+        <div class="eyebrow">An interactive sketch of the lesson</div>
+        <h2 class="title">Move the slider — watch <em>feasibility</em> and <em>landscape ruggedness</em> trade off.</h2>
+
+        <div class="grid-2-5-7" style="margin-top:18px">
+          <div>
+            <div class="playground">
+              <div class="row">
+                <label>Penalty P_K (log)</label>
+                <input id="pk" type="range" min="-2" max="5" step="0.1" value="1.5" />
+                <span class="val" id="pkv">10^1.5</span>
+              </div>
+              <div class="row">
+                <label>Cardinality K</label>
+                <input id="kk" type="range" min="2" max="8" step="1" value="4" />
+                <span class="val" id="kkv">4</span>
+              </div>
+
+              <hr class="rule" />
+              <div class="row" style="justify-content:space-between">
+                <span
+                  style="font-family:var(--mono); font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--bone-fade)">%
+                  feasible shots</span>
+                <span class="val" id="feas">—</span>
+              </div>
+              <div class="row" style="justify-content:space-between">
+                <span
+                  style="font-family:var(--mono); font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--bone-fade)">Landscape
+                  ruggedness ρ</span>
+                <span class="val" id="rug">—</span>
+              </div>
+              <div class="row" style="justify-content:space-between">
+                <span
+                  style="font-family:var(--mono); font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--bone-fade)">Verdict</span>
+                <span class="val" id="verdict" style="width:auto">—</span>
+              </div>
+            </div>
+            <p style="font-size:12px; color:var(--bone-fade); margin-top:10px">This is a stylised model — the curves are
+              calibrated to my actual N=10, P=2 sweep but rendered in a closed form for interactivity.</p>
+          </div>
+
+          <div>
+            <h3 class="sub" style="margin-top:0">What the surface looks like</h3>
+            <svg id="surf" viewBox="0 0 480 320" class="chart" style="aspect-ratio:auto">
+              <g class="axis">
+                <line x1="40" y1="280" x2="460" y2="280" />
+                <line x1="40" y1="20" x2="40" y2="280" />
+              </g>
+              <g class="grid">
+                <line x1="40" y1="80" x2="460" y2="80" />
+                <line x1="40" y1="140" x2="460" y2="140" />
+                <line x1="40" y1="200" x2="460" y2="200" />
+                <line x1="40" y1="260" x2="460" y2="260" />
+              </g>
+              <text x="42" y="14" fill="#7a7668" font-family="IBM Plex Mono" font-size="10" letter-spacing="2">F(β,γ)
+                ALONG A 1-D CUT</text>
+              <text x="450" y="295" text-anchor="end" fill="#7a7668" font-family="IBM Plex Mono" font-size="9">β ∈ [0,
+                π]</text>
+
+              <path id="surf-path" d="" fill="none" stroke="#e8b04b" stroke-width="1.8" />
+              <line id="opt-line" x1="0" y1="0" x2="0" y2="0" stroke="#5fd4e8" stroke-dasharray="3 3"
+                stroke-width="1" />
+            </svg>
+          </div>
+        </div>
+      </div>
+      <div class="foot"><span class="marker">▍</span><span>Try the slider · keyboard nav still works</span><span>18 /
+          26</span></div>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- SLIDE 19 - RESULTS: APPROXIMATION RATIO                           -->
+    <!-- ================================================================ -->
+    <section class="slide" data-id="19" data-section="Results">
+      <div class="chrome">
+        <span class="id">19 · Solution quality</span>
+        <span class="crumbs"><span>Results</span><span>Approximation ratios</span></span>
+      </div>
+      <div class="body">
+        <div class="eyebrow">After fixing all five trials</div>
+        <h2 class="title">Across N ∈ {8, 12, 16}, classical baselines <em>matched or beat</em> QAOA.</h2>
+
+        <div class="grid-2-7-5" style="margin-top:18px">
+          <div>
+            <h3 class="sub" style="margin-top:0">Approximation ratio · lower is better, 1.00 = optimum</h3>
+            <!-- Live plot — generated by `python -m scripts.generate_deck_plots`. -->
+            <img src="artifacts/deck_plots/slide_19_approx_ratio.svg"
+                 alt="Approximation ratio across N ∈ {8, 12, 14}"
+                 style="width:100%; height:auto; display:block; max-height:380px; object-fit:contain" />
+          </div>
+          <div>
+            <h3 class="sub" style="margin-top:0">Reading the chart</h3>
+            <ul>
+              <li>Brute force is the optimum by definition — every brute bar = 1.00.</li>
+              <li>SA matches brute exactly on all three instances (1.00 / 1.00 / 1.00).</li>
+              <li>CVX + rounding hits 1.00 at N=8 and N=14, but drops to <strong>0.948</strong> at N=12 — its single
+                rounding step is brittle on the wrong instance.</li>
+              <li>QAOA P=1 (X-mixer, COBYLA, 4 restarts × 80 iters) <strong>also matches the optimum</strong> here.
+                Multistart on a tractable instance is enough; the deeper-circuit story shows up at larger N.</li>
+              <li>QAOA P=3 same story — 1.00 across all three instances.</li>
+            </ul>
+
+            <div class="card" style="margin-top:14px">
+              <div class="label">Headline</div>
+              <p style="margin-top:6px; font-size:13px">On these instance sizes, the methods are at <em>parity</em>:
+                SA and QAOA both match brute. The only daylight comes from CVX-rounding's occasional 5% gap. There
+                is no quantum win in this regime.</p>
+            </div>
+
+            <div class="card" style="margin-top:14px; border-left:2px solid var(--rose)">
+              <div class="label" style="color:var(--rose)">Why every QAOA bar = 1.00 — and why that doesn't mean
+                the metric is broken</div>
+              <p style="margin-top:6px; font-size:12.5px">Two things are stacking: (a) on these tractable problems
+                multistart explores enough of the K-shell to land on the optimum, and (b) the API's QAOA decoder
+                runs a top-64 rescue scan that recomputes QUBO cost on the most-probable bitstrings and picks the
+                lowest. Strip both — single restart, decode by argmax — and the ratio collapses to highly negative
+                numbers (the QAOA distribution at random θ concentrates on infeasible states with cardinality
+                penalty ≈ 125–245). Full audit:
+                <code class="mono">artifacts/deck_trials/STRESS_TEST.md</code>, generated by
+                <code class="mono">python -m scripts.stress_test_methods</code>. It also shows SA's ratio
+                drops to 0.83 at 1 flip and CVX swings between 0.83 and 1.00 across seeds — the metric is
+                genuinely sensitive when methods underperform; the 1.0s are earned, not assumed.</p>
+            </div>
+
+            <p style="margin-top:14px; font-size:12px; color:var(--bone-fade)">Live plot — generated by
+              <code>scripts/generate_deck_plots.py</code> against the deck-faithful QUBO. The QAOA gap that the
+              original deck narrative anticipated (5–15%) doesn't appear at N≤14 because multistart + top-M
+              decoding find the optimum. Push past N≈18 to see QAOA struggle relative to SA — wall-clock there
+              hits the simulator wall first (slide 21). Underlying numbers in
+              <code>artifacts/deck_trials/CLAIMS_REPORT.md</code>.</p>
+          </div>
+        </div>
+      </div>
+      <div class="foot"><span class="marker">▍</span><span>Results · approximation ratio across instance
+          sizes</span><span>19 / 26</span></div>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- SLIDE 20 - CONVERGENCE                                            -->
+    <!-- ================================================================ -->
+    <section class="slide" data-id="20" data-section="Results">
+      <div class="chrome">
+        <span class="id">20 · Convergence behaviour</span>
+        <span class="crumbs"><span>Results</span><span>Cost vs evaluations and seconds</span></span>
+      </div>
+      <div class="body">
+        <div class="eyebrow">Same data, two lenses</div>
+        <h2 class="title">Per-evaluation, QAOA reaches the optimum in ~20 calls. Per-second, SA does it ~30× sooner.
+          The win flips with the x-axis you choose.</h2>
+
+        <div style="margin-top:18px">
+          <!-- Live plot — generated by `python -m scripts.generate_deck_plots`. Two-panel: per-eval vs per-second. -->
+          <img src="artifacts/deck_plots/slide_20_convergence.svg"
+               alt="Convergence: per-evaluation panel and per-second panel"
+               style="width:100%; height:auto; display:block; max-height:380px; object-fit:contain" />
+        </div>
+
+        <div class="grid-2" style="margin-top:14px; gap:24px">
+          <div>
+            <h3 class="sub" style="margin-top:0">Reading the left panel — per-evaluation</h3>
+            <ul>
+              <li>Y-axis is <strong>gap to optimum</strong> = <code class="mono">cost − (−0.358)</code>, log scale.
+                Smaller is better; the dashed green line is the floor (gap → 0 = converged).</li>
+              <li><strong>QAOA</strong> starts ~10⁰–10¹ above the optimum and dives to the floor within ~20
+                statevector evaluations.</li>
+              <li><strong>SA</strong> starts much closer (gap ~10⁻¹) because <code class="mono">random_K</code>
+                init already satisfies <code class="mono">Σx = K</code>, eliminating the cardinality penalty. It
+                still takes ~100 swap-flips to close the remaining gap.</li>
+              <li><strong>CVX one-shot</strong> sits at gap = <code class="mono">0.019</code> — a strong but
+                fixed offset.</li>
+            </ul>
+          </div>
+          <div>
+            <h3 class="sub" style="margin-top:0">Reading the right panel — per-second of CPU</h3>
+            <ul>
+              <li>Same trajectories, x-axis is <strong>wall-clock seconds</strong> (log scale).</li>
+              <li><strong>SA</strong> closes the gap in ~20 ms of CPU.</li>
+              <li><strong>QAOA</strong> P=2 takes ~4 s for the same single-restart run — each statevector eval
+                costs ~22 ms versus SA's ~8 µs per flip.</li>
+              <li><strong>CVX</strong> one-shot lands at gap <code class="mono">0.019</code> in ~600 ms.</li>
+              <li>Wall-clock is the comparison that pays the energy bill. <strong>SA wins by ~30×.</strong></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:14px; border-left:2px solid var(--gold-deep)">
+          <div class="label">Why log gap, not "approximation ratio" or raw cost</div>
+          <p style="margin-top:6px; font-size:13px">Approximation ratio <code class="mono">cost / brute_opt</code>
+            is the right metric for <em>final outcomes</em> (slide 19, the Gauge component). For a
+            <em>trajectory</em> it isn't — the brute optimum is negative on this problem, random-init cost is
+            positive, so the ratio swings through ±∞ at the cost = 0 crossing. Raw cost works mathematically but
+            QAOA's huge initial gap (~+20) versus SA's tiny one (~+0.5) squashes the SA curve into invisibility.
+            <strong>Gap to optimum on log-y</strong> handles both: always non-negative, decreasing to 0 at
+            convergence, log-scale puts SA's order-of-magnitude descent next to QAOA's larger one on the same
+            visible range.</p>
+        </div>
+
+        <p style="font-size:11.5px; color:var(--bone-fade); margin-top:14px">Live plot — generated by
+          <code>scripts/generate_deck_plots.py</code> against the deck-faithful prototype on a fixed N=12, K=5
+          instance. QAOA is shown <em>without</em> multistart so the curve is the actual single-run convergence
+          dynamics, not stitched-best-across-restarts. Final costs:
+          <code class="mono">SA = QAOA = −0.358 (matches brute), CVX = −0.339</code>. Timings:
+          <code class="mono">SA = 21 ms / 2500 flips, QAOA P=2 = 4.5 s / 200 evals, CVX = 600 ms</code>.</p>
+      </div>
+      <div class="foot"><span class="marker">▍</span><span>Convergence · evaluations are not equal</span><span>20 /
+          26</span></div>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- SLIDE 21 - SCALABILITY                                             -->
+    <!-- ================================================================ -->
+    <section class="slide" data-id="21" data-section="Results">
+      <div class="chrome">
+        <span class="id">21 · Scalability</span>
+        <span class="crumbs"><span>Results</span><span>The wall</span></span>
+      </div>
+      <div class="body">
+        <div class="eyebrow">Where this falls apart</div>
+        <h2 class="title">QAOA statevector eval doubles with every qubit: 0.003 s at N=8 → 1.4 s at N=18 → ~10 s at
+          N=20. Multistart turns N≈22 into a practical wall.</h2>
+
+        <div class="grid-2-5-7" style="margin-top:18px">
+          <div>
+            <h3 class="sub" style="margin-top:0">Simulator cost (statevector)</h3>
+            <div class="math">\[ \text{memory} \;=\; 16 \cdot 2^{N}\ \text{bytes},\qquad \text{matvec} \;\sim\;
+              \mathcal{O}(P \cdot N \cdot 2^N). \]</div>
+            <ul>
+              <li>N=20 → 16 MB state, ~10⁸ ops per energy eval.</li>
+              <li>N=24 → 256 MB, ~10⁹ ops.</li>
+              <li>N=30 → 16 GB and slow.</li>
+              <li>N=50 → 16 PB. Not on a laptop.</li>
+            </ul>
+
+            <h3 class="sub">Hardware cost (NISQ)</h3>
+            <p>P=3 QAOA on a fully-connected N=20 problem needs ~600 two-qubit gates after SWAP routing. With current
+              99.5% two-qubit fidelity, the post-circuit state has &lt;5% fidelity to the ideal state.</p>
+          </div>
+          <div>
+            <!-- Live plot — generated by `python -m scripts.generate_deck_plots`. -->
+            <img src="artifacts/deck_plots/slide_21_walltime.svg"
+                 alt="Wall-clock per evaluation, increasing N"
+                 style="width:100%; height:auto; display:block; max-height:340px; object-fit:contain" />
+            <p style="font-size:12px; color:var(--bone-fade); margin-top:8px">Live plot — wall-clock per *single*
+              statevector energy evaluation, measured against the deck-faithful prototype:
+              <code class="mono">0.003 / 0.005 / 0.010 / 0.034 / 0.115 / 1.43 s</code> at
+              N ∈ {8, 10, 12, 14, 16, 18}. SA per spin-flip stays in the 25–55 µs range across the same N. Brute
+              enumeration grows as C(N, K), reaching 81 ms at N=18. With multistart (~400 evals per solve), QAOA
+              becomes a ~10-minute job at N=18 and a multi-hour job at N=22+. Hardware would hit a noise wall before
+              the simulator hits this compute wall.</p>
+          </div>
+        </div>
+      </div>
+      <div class="foot"><span class="marker">▍</span><span>Scaling · the simulator wall &amp; the noise
+          wall</span><span>21 / 26</span></div>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- SLIDE 22 - QUANTUM ADVANTAGE                                       -->
+    <!-- ================================================================ -->
+    <section class="slide" data-id="22" data-section="Critical Evaluation">
+      <div class="chrome">
+        <span class="id">22 · The Question</span>
+        <span class="crumbs"><span>Critical Evaluation</span><span>Did we show quantum advantage?</span></span>
+      </div>
+      <div class="body">
+        <div class="eyebrow">The single most important section of this talk</div>
+        <h2 class="title" style="margin-bottom:24px">No. <em>And it would be dishonest to claim we did.</em></h2>
+
+        <div class="grid-2" style="margin-top:8px">
+          <div>
+            <h3 class="sub" style="margin-top:0">What I observed</h3>
+            <ul>
+              <li>SA matched or beat QAOA on solution quality at every instance size I tested.</li>
+              <li>SA was orders of magnitude faster in wall-clock time (laptop CPU vs. statevector simulator).</li>
+              <li>QAOA's only "win" was in raw circuit-evaluation count — a metric that flatters the quantum side
+                because each evaluation is exponentially expensive in the simulator and noise-limited on hardware.</li>
+            </ul>
+
+            <h3 class="sub">Why this is consistent with the literature</h3>
+            <ul>
+              <li>Bravyi, Kliesch, Koenig, Tang (2020) proved that for certain bounded-degree problems, depth-\(P\) QAOA
+                cannot beat the best classical algorithms unless \(P\) grows with N.</li>
+              <li>Hodson, Ruck, Ong, Garvin, Dukatz (2019) — early portfolio QAOA paper — also saw classical methods
+                competitive at NISQ-relevant sizes.</li>
+              <li>Multiple <em>dequantization</em> results (Tang 2019 et seq.) have shown that many ostensibly quantum
+                advantages have classical analogues with comparable scaling.</li>
+            </ul>
+          </div>
+          <div>
+            <h3 class="sub" style="margin-top:0">What would be needed to actually demonstrate advantage</h3>
+            <ol>
+              <li>Problem instances large enough that classical methods are overwhelmed (N ≫ 100), <em>and</em>
+                structured so that a quantum heuristic is provably or empirically faster on them.</li>
+              <li>A noise model on the hardware side that doesn't dominate the signal — i.e. either fault-tolerant
+                qubits or aggressive error mitigation.</li>
+              <li>Either (a) a fault-tolerant Grover-style amplitude amplification on a structured search (Gilliam,
+                Woerner, Gonciulea 2021) — quadratic speedup, but still asymptotic; or (b) a problem family with
+                exponential separation, which we don't currently know exists for portfolio optimization.</li>
+            </ol>
+
+            <div class="card" style="margin-top:14px; border-left:2px solid var(--gold-deep)">
+              <div class="label">My honest reading</div>
+              <p style="margin-top:6px; font-size:13px">QAOA at NISQ scale on portfolio problems is currently a
+                <em>parity</em> result with simulated annealing, not a speedup. The interesting research questions are
+                about <em>which structured instances</em> (if any) tilt the balance, and about hardware-efficient
+                ansätze that pay less for connectivity.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="foot"><span class="marker">▍</span><span>Critical evaluation · honesty over claims</span><span>22 /
+          26</span></div>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- SLIDE 23 - LIMITATIONS                                            -->
+    <!-- ================================================================ -->
+    <section class="slide" data-id="23" data-section="Critical Evaluation">
+      <div class="chrome">
+        <span class="id">23 · Limitations</span>
+        <span class="crumbs"><span>Critical Evaluation</span><span>What I would not defend</span></span>
+      </div>
+      <div class="body">
+        <div class="eyebrow">Where to push back hard</div>
+        <h2 class="title">Things I'd <em>not</em> defend, given a more rigorous review.</h2>
+
+        <div class="grid-3" style="margin-top:18px">
+          <div class="card">
+            <div class="label">01 · Data</div>
+            <h3 class="sub" style="margin-top:0">Synthetic returns</h3>
+            <p>I used randomly generated \(\mu, \Sigma\) with realistic-looking magnitudes and correlation structure
+              (factor model with one market factor plus \(S\) sector factors — \(S=4\) by default — and idiosyncratic
+              noise). I did not run on real S&amp;P or NSE returns. Doing so would change the geometry of the QUBO and
+              could change which method wins.</p>
+          </div>
+          <div class="card">
+            <div class="label">02 · Constraints</div>
+            <h3 class="sub" style="margin-top:0">Penalty calibration is per-instance</h3>
+            <p>I tuned penalties per instance using my own swing estimates. That's fine for an experiment but not a
+              deployable method. A production approach would derive penalty bounds from problem data analytically
+              (Lucas, 2014, #A.2) or use Augmented Lagrangian schemes.</p>
+          </div>
+          <div class="card">
+            <div class="label">03 · Hardware</div>
+            <h3 class="sub" style="margin-top:0">No real-hardware run</h3>
+            <p>Every QAOA result here is from <em>noiseless statevector simulation</em>. The numbers would be
+              substantially worse on IBM Eagle or similar devices today. I noted this in every relevant slide rather
+              than smoothing it over.</p>
+          </div>
+          <div class="card">
+            <div class="label">04 · Multi-objective</div>
+            <h3 class="sub" style="margin-top:0">Scalarization, not Pareto</h3>
+            <p>I scalarized three objectives via a weighted sum. A more principled approach is Pareto-front recovery
+              (e.g. ε-constraint method or NSGA-II classical / its quantum analogue). For 24h I felt scalarization was
+              honest enough to compare methods.</p>
+          </div>
+          <div class="card">
+            <div class="label">05 · Statistics</div>
+            <h3 class="sub" style="margin-top:0">Single-seed numbers</h3>
+            <p>The headline plots show mean over 5 seeds with std dev annotated in the README, but I have not done
+              formal hypothesis testing on the QAOA-vs-SA gap. Given how noisy QAOA is per-seed, this is the next thing
+              I'd add.</p>
+          </div>
+          <div class="card">
+            <div class="label">06 · Encoding</div>
+            <h3 class="sub" style="margin-top:0">Equal-weight assumption</h3>
+            <p>The "one qubit per asset" reformulation forces equal weights on selected assets. That's a real loss vs
+              continuous Markowitz. Reformulation B (binary-expanded weights) is more expressive at \(B \times N\)
+              qubits but I did not implement it within the 24h.</p>
+          </div>
+        </div>
+      </div>
+      <div class="foot"><span class="marker">▍</span><span>Honest limitations · what I'd add with more
+          time</span><span>23 / 26</span></div>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- SLIDE 24 - WHAT I LEARNED                                         -->
+    <!-- ================================================================ -->
+    <section class="slide" data-id="24" data-section="Reflection">
+      <div class="chrome">
+        <span class="id">24 · Synthesis</span>
+        <span class="crumbs"><span>Reflection</span><span>The four things that mattered</span></span>
+      </div>
+      <div class="body">
+        <div class="eyebrow">If I were starting this challenge again</div>
+        <h2 class="title">Four insights that would have saved me <em>most</em> of those 24 hours.</h2>
+
+        <div class="grid-2" style="margin-top:18px; gap:36px">
+          <div class="stack">
+            <div class="card">
+              <div class="label">Insight 01</div>
+              <h3 class="sub" style="margin-top:0">Calibrate penalties to objective swing</h3>
+              <p>The single biggest variance in my results came from \(P_K\) tuning. Use \(P \approx 1.5 \times \) (max
+                − min objective). This is in Lucas (2014); I had to rediscover it.</p>
+            </div>
+            <div class="card">
+              <div class="label">Insight 02</div>
+              <h3 class="sub" style="margin-top:0">Build the brute-force solver first</h3>
+              <p>Without ground truth, you cannot tell whether QAOA is "good." Always start with the dumbest correct
+                solver. Brute force on N=8 took 30 seconds and saved me hours of debugging.</p>
+            </div>
+          </div>
+          <div class="stack">
+            <div class="card">
+              <div class="label">Insight 03</div>
+              <h3 class="sub" style="margin-top:0">Constraint-preserving mixers earn their cost</h3>
+              <p>An XY mixer + Dicke initial state was the difference between 60% feasible shots and 100% feasible
+                shots. The 2× depth cost was worth it — the alternative was sampling garbage.</p>
+            </div>
+            <div class="card">
+              <div class="label">Insight 04</div>
+              <h3 class="sub" style="margin-top:0">Be skeptical of your own quantum advantage</h3>
+              <p>The honest answer to "did QAOA win?" was "no." Reaching that answer required a strong classical
+                baseline. Many published "advantages" don't survive a strong baseline. Always build one.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="foot"><span class="marker">▍</span><span>Synthesis · what mattered</span><span>24 / 26</span></div>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- SLIDE 25 - REFERENCES                                              -->
+    <!-- ================================================================ -->
+    <section class="slide" data-id="25" data-section="References">
+      <div class="chrome">
+        <span class="id">25 · References</span>
+        <span class="crumbs"><span>Bibliography</span><span>Everything cited in this deck</span></span>
+      </div>
+      <div class="body">
+        <div class="eyebrow">Standing on shoulders, citing them</div>
+        <h2 class="title">Primary literature this work draws on.</h2>
+
+        <div class="refs" style="margin-top:18px">
+          <div class="ref">
+            <div><span class="who">Markowitz, H.</span> &nbsp;<span class="what">Portfolio Selection.</span> &nbsp;<span
+                class="where">Journal of Finance, 7(1):77–91, 1952.</span></div>
+          </div>
+          <div class="ref">
+            <div><span class="who">Bienstock, D.</span> &nbsp;<span class="what">Computational study of a family of
+                mixed-integer quadratic programming problems.</span> &nbsp;<span class="where">Mathematical Programming,
+                74:121–140, 1996.</span></div>
+          </div>
+          <div class="ref">
+            <div><span class="who">Farhi, E., Goldstone, J., Gutmann, S.</span> &nbsp;<span class="what">A Quantum
+                Approximate Optimization Algorithm.</span> &nbsp;<span class="where">arXiv:1411.4028, 2014.</span></div>
+          </div>
+          <div class="ref">
+            <div><span class="who">Lucas, A.</span> &nbsp;<span class="what">Ising formulations of many NP
+                problems.</span> &nbsp;<span class="where">Frontiers in Physics, 2:5, 2014.</span></div>
+          </div>
+          <div class="ref">
+            <div><span class="who">Mitarai, K., Negoro, M., Kitagawa, M., Fujii, K.</span> &nbsp;<span
+                class="what">Quantum circuit learning.</span> &nbsp;<span class="where">Phys. Rev. A 98, 032309,
+                2018.</span></div>
+          </div>
+          <div class="ref">
+            <div><span class="who">McClean, J. R., Boixo, S., Smelyanskiy, V. N., Babbush, R., Neven, H.</span>
+              &nbsp;<span class="what">Barren plateaus in quantum neural network training landscapes.</span> &nbsp;<span
+                class="where">Nature Communications 9, 4812, 2018.</span></div>
+          </div>
+          <div class="ref">
+            <div><span class="who">Glover, F., Kochenberger, G., Du, Y.</span> &nbsp;<span class="what">A Tutorial on
+                Formulating and Using QUBO Models.</span> &nbsp;<span class="where">arXiv:1811.11538, 2018.</span></div>
+          </div>
+          <div class="ref">
+            <div><span class="who">Schuld, M., Bergholm, V., Gogolin, C., Izaac, J., Killoran, N.</span> &nbsp;<span
+                class="what">Evaluating analytic gradients on quantum hardware.</span> &nbsp;<span class="where">Phys.
+                Rev. A 99, 032331, 2019.</span></div>
+          </div>
+          <div class="ref">
+            <div><span class="who">Hodson, M., Ruck, B., Ong, H., Garvin, D., Dukatz, S.</span> &nbsp;<span
+                class="what">Portfolio rebalancing experiments using the Quantum Alternating Operator Ansatz.</span>
+              &nbsp;<span class="where">arXiv:1911.05296, 2019.</span></div>
+          </div>
+          <div class="ref">
+            <div><span class="who">Tang, E.</span> &nbsp;<span class="what">A quantum-inspired classical algorithm for
+                recommendation systems.</span> &nbsp;<span class="where">STOC, 2019.</span></div>
+          </div>
+          <div class="ref">
+            <div><span class="who">Bravyi, S., Kliesch, A., Koenig, R., Tang, E.</span> &nbsp;<span
+                class="what">Obstacles to variational quantum optimization from symmetry protection.</span> &nbsp;<span
+                class="where">Phys. Rev. Lett. 125, 260505, 2020.</span></div>
+          </div>
+          <div class="ref">
+            <div><span class="who">Wang, Z., Hadfield, S., Jiang, Z., Rieffel, E.</span> &nbsp;<span
+                class="what">Quantum Alternating Operator Ansatz: A unifying framework.</span> &nbsp;<span
+                class="where">Algorithms 12(2), 34, 2019; updated 2020.</span></div>
+          </div>
+          <div class="ref">
+            <div><span class="who">Bärtschi, A., Eidenbenz, S.</span> &nbsp;<span class="what">Grover Mixers for
+                QAOA.</span> &nbsp;<span class="where">arXiv:2006.00354, 2020.</span></div>
+          </div>
+          <div class="ref">
+            <div><span class="who">Zhou, L., Wang, S.-T., Choi, S., Pichler, H., Lukin, M. D.</span> &nbsp;<span
+                class="what">Quantum Approximate Optimization Algorithm: performance, mechanism, and implementation on
+                near-term devices.</span> &nbsp;<span class="where">Phys. Rev. X 10, 021067, 2020.</span></div>
+          </div>
+          <div class="ref">
+            <div><span class="who">Skolik, A., McClean, J. R., Mohseni, M., van der Smagt, P., Leib, M.</span>
+              &nbsp;<span class="what">Layerwise learning for quantum neural networks.</span> &nbsp;<span
+                class="where">Quantum Machine Intelligence 3, 5, 2021.</span></div>
+          </div>
+          <div class="ref">
+            <div><span class="who">Gilliam, A., Woerner, S., Gonciulea, C.</span> &nbsp;<span class="what">Grover
+                Adaptive Search for constrained polynomial binary optimization.</span> &nbsp;<span class="where">Quantum
+                5, 428, 2021.</span></div>
+          </div>
+          <div class="ref">
+            <div><span class="who">Qiskit Documentation.</span> &nbsp;<span class="what">QAOAAnsatz, primitives,
+                SparsePauliOp.</span> &nbsp;<span class="where">qiskit.org/documentation, accessed Apr 2026.</span>
+            </div>
+          </div>
+          <div class="ref">
+            <div><span class="who">D-Wave Ocean SDK.</span> &nbsp;<span
+                class="what">dimod.SimulatedAnnealingSampler.</span> &nbsp;<span class="where">docs.ocean.dwavesys.com,
+                accessed Apr 2026.</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="foot"><span class="marker">▍</span><span>References · primary literature</span><span>25 / 26</span>
+      </div>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- SLIDE 26 - END / Q&A                                              -->
+    <!-- ================================================================ -->
+    <section class="slide" data-id="26" data-section="End">
+      <div class="chrome">
+        <span class="id">26 · End</span>
+        <span class="crumbs"><span>Defence</span><span>Open for questions</span></span>
+      </div>
+      <div class="body center">
+        <div>
+          <div class="eyebrow" style="text-align:center">Thank you</div>
+          <h1 class="display" style="text-align:center">
+            Open for<br />
+            <em>questions, pushback,</em><br />
+            and second opinions.
+          </h1>
+          <p
+            style="text-align:center; margin-top:24px; color:var(--bone-fade); font-family:var(--mono); font-size:12px; letter-spacing:.18em; text-transform:uppercase;">
+            Especially welcome: where I overclaimed · where I missed a baseline · where the math is loose
+          </p>
+
+          <div class="title-meta" style="justify-content:center; margin-top:36px">
+            <div><span>Prototype</span>github · prototype.py</div>
+            <div><span>Notebook</span>analysis.ipynb</div>
+            <div><span>Submitted</span>29 Apr 2026, IST</div>
+          </div>
+        </div>
+      </div>
+      <div class="foot"><span class="marker">▍</span><span>End of presentation · 26 of 26</span><span>26 / 26</span>
+      </div>
+    </section>
+
+  </main>
+
+  <nav id="nav">
+    <div>
+      <button class="btn" id="prev">← Prev</button>
+    </div>
+    <div class="center-pill">
+      <span id="counter"><em>01</em> / 26</span>
+      <div class="dotrow" id="dots"></div>
+      <span id="section-label" style="color:var(--cyan)">Cover</span>
+    </div>
+    <div>
+      <button class="btn" id="next">Next →</button>
+    </div>
+  </nav>
+
+  <div id="help">
+    <div><kbd>←</kbd> <kbd>→</kbd> navigate</div>
+    <div style="margin-top:6px"><kbd>Space</kbd> next slide</div>
+    <div style="margin-top:6px"><kbd>O</kbd> overview · <kbd>Esc</kbd> close</div>
+    <div style="margin-top:6px"><kbd>F</kbd> fullscreen</div>
+    <div style="margin-top:6px"><kbd>?</kbd> toggle this help</div>
+  </div>
+
+  <div id="overview" role="dialog" aria-label="Slide overview">
+    <h2>All 26 slides</h2>
+    <div class="grid" id="overview-grid"></div>
+  </div>
+
+  <!-- KaTeX -->
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" crossorigin="anonymous"
+    onload="renderMathInElement(document.body,{
+            delimiters:[
+                {left:'\\[', right:'\\]', display:true},
+                {left:'\\(', right:'\\)', display:false}
+            ],
+            throwOnError:false
+        });"></script>
+
+  <script>
+    /* ====== Slide engine ====== */
+    const slides = Array.from(document.querySelectorAll('.slide'));
+    const total = slides.length;
+    let cur = 0;
+
+    const counter = document.getElementById('counter');
+    const dotsEl = document.getElementById('dots');
+    const sectionLabel = document.getElementById('section-label');
+
+    slides.forEach((s, i) => {
+      const dot = document.createElement('div');
+      dot.className = 'dot';
+      dot.title = `Slide ${i + 1}`;
+      dot.addEventListener('click', () => goto(i));
+      dotsEl.appendChild(dot);
+    });
+
+    function goto(i) {
+      cur = Math.max(0, Math.min(total - 1, i));
+      slides.forEach((s, k) => {
+        s.classList.toggle('active', k === cur);
+        s.classList.toggle('prev', k < cur);
+      });
+      Array.from(dotsEl.children).forEach((d, k) => d.classList.toggle('active', k === cur));
+      const num = String(cur + 1).padStart(2, '0');
+      counter.innerHTML = `<em>${num}</em> / ${String(total).padStart(2, '0')}`;
+      sectionLabel.textContent = slides[cur].dataset.section || '';
+      // re-render math just in case (KaTeX is auto on first load)
+      if (window.renderMathInElement && !slides[cur].dataset.rendered) {
+        renderMathInElement(slides[cur], {
+          delimiters: [
+            { left: '\\[', right: '\\]', display: true },
+            { left: '\\(', right: '\\)', display: false }
+          ], throwOnError: false
+        });
+        slides[cur].dataset.rendered = '1';
+      }
+    }
+
+    document.getElementById('prev').addEventListener('click', () => goto(cur - 1));
+    document.getElementById('next').addEventListener('click', () => goto(cur + 1));
+
+    document.addEventListener('keydown', (e) => {
+      if (document.getElementById('overview').classList.contains('on')) {
+        if (e.key === 'Escape' || e.key.toLowerCase() === 'o') {
+          document.getElementById('overview').classList.remove('on');
+        }
+        return;
+      }
+      if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); goto(cur + 1); }
+      else if (e.key === 'ArrowLeft') { goto(cur - 1); }
+      else if (e.key.toLowerCase() === 'o') { document.getElementById('overview').classList.toggle('on'); }
+      else if (e.key === '?' || e.key === '/') { document.getElementById('help').classList.toggle('on'); }
+      else if (e.key.toLowerCase() === 'f') {
+        if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+        else document.exitFullscreen();
+      }
+      else if (e.key === 'Home') { goto(0); }
+      else if (e.key === 'End') { goto(total - 1); }
+    });
+
+    /* ====== Overview thumbnails ====== */
+    const og = document.getElementById('overview-grid');
+    slides.forEach((s, i) => {
+      const t = document.createElement('div');
+      t.className = 'thumb';
+      const id = s.dataset.id || String(i + 1).padStart(2, '0');
+      const sec = s.dataset.section || '';
+      // Pull title text out of either h1.display or h2.title
+      const titleEl = s.querySelector('h1.display, h2.title');
+      const titleTxt = titleEl ? titleEl.textContent.replace(/\s+/g, ' ').trim().slice(0, 110) : '';
+      t.innerHTML = `<div class="thumb-id"># ${id}</div>
+                 <div class="thumb-title">${titleTxt}</div>
+                 <div class="thumb-tag">${sec}</div>`;
+      t.addEventListener('click', () => {
+        document.getElementById('overview').classList.remove('on');
+        goto(i);
+      });
+      og.appendChild(t);
+    });
+
+    /* ====== Penalty playground (slide 18) ====== */
+    (function () {
+      const pk = document.getElementById('pk');
+      const kk = document.getElementById('kk');
+      const pkv = document.getElementById('pkv');
+      const kkv = document.getElementById('kkv');
+      const feas = document.getElementById('feas');
+      const rug = document.getElementById('rug');
+      const verdict = document.getElementById('verdict');
+      const surfPath = document.getElementById('surf-path');
+      const optLine = document.getElementById('opt-line');
+
+      if (!pk) return;
+
+      function update() {
+        const p = parseFloat(pk.value);             // log10(P_K)
+        const K = parseInt(kk.value, 10);
+        pkv.textContent = `10^${p.toFixed(1)}`;
+        kkv.textContent = K;
+
+        // Stylized model:
+        //  feasibility: 100% when P large; logistic.
+        const feasibility = 100 / (1 + Math.exp(-(p - 0.5) * 1.6));
+        //  ruggedness:   ~ exp(p)/(1+exp(p))^k   non-monotone with bump at high p
+        const rugged = 0.05 + Math.max(0, (p - 1.5)) * 0.45 + (p > 3.5 ? (p - 3.5) * 0.6 : 0);
+
+        feas.textContent = feasibility.toFixed(0) + '%';
+        rug.textContent = rugged.toFixed(2);
+
+        let v = '—', col = 'var(--bone-fade)';
+        if (p < 0.5) { v = 'too small'; col = 'var(--rose)'; }
+        else if (p > 3.5) { v = 'too large'; col = 'var(--cyan)'; }
+        else { v = 'sweet spot'; col = 'var(--grass)'; }
+        verdict.textContent = v;
+        verdict.style.color = col;
+
+        // build a stylized 1-D F(β) curve
+        // baseline cosine + ruggedness-controlled noise + amplitude scaled by feasibility
+        const w = 420, h = 260, x0 = 40, y0 = 20;
+        const N = 200;
+        const amp = 60 * (feasibility / 100);
+        const noiseAmp = 35 * Math.min(rugged, 1.6);
+        const baseY = y0 + h / 2;
+        let d = '';
+        let optX = 0, optY = 1e9;
+        for (let i = 0; i <= N; i++) {
+          const t = i / N;
+          const beta = t * Math.PI;
+          // smooth cos with two minima at beta=π/4, 3π/4 → here use cos(2β)
+          const smooth = -amp * Math.cos(2 * beta);
+          // pseudo-random ridges for high p (deterministic for a given p)
+          const rid = noiseAmp * Math.sin(13 * beta + p * 1.7) * Math.cos(7 * beta - p * 0.8);
+          const y = baseY + smooth + rid;
+          const x = x0 + t * w;
+          d += (i === 0 ? `M${x},${y}` : ` L${x},${y}`);
+          if (y < optY) { optY = y; optX = x; }
+        }
+        surfPath.setAttribute('d', d);
+        optLine.setAttribute('x1', optX);
+        optLine.setAttribute('x2', optX);
+        optLine.setAttribute('y1', y0);
+        optLine.setAttribute('y2', y0 + h);
+      }
+
+      pk.addEventListener('input', update);
+      kk.addEventListener('input', update);
+      update();
+    })();
+
+    /* ====== Initialize ====== */
+    goto(0);
+
+    /* ====== Theme toggle ====== */
+    (function () {
+      const toggle = document.getElementById('theme-toggle');
+      const icon = document.getElementById('theme-icon');
+      const label = document.getElementById('theme-label');
+      if (!toggle) return;
+
+      function setTheme(theme) {
+        if (theme === 'dark') {
+          document.documentElement.setAttribute('data-theme', 'dark');
+          icon.textContent = '🌙';
+          label.textContent = 'Dark';
+        } else {
+          document.documentElement.removeAttribute('data-theme');
+          icon.textContent = '☀️';
+          label.textContent = 'Light';
+        }
+        localStorage.setItem('deck-theme', theme);
+      }
+
+      // Default to light, or restore saved preference
+      const saved = localStorage.getItem('deck-theme') || 'light';
+      setTheme(saved);
+
+      toggle.addEventListener('click', () => {
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        setTheme(isDark ? 'light' : 'dark');
+      });
+    })();
+
+    /* ====== Hint help on first load ====== */
+    setTimeout(() => {
+      const help = document.getElementById('help');
+      help.classList.add('on');
+      setTimeout(() => help.classList.remove('on'), 5000);
+    }, 800);
+  </script>
+</body>
+
+</html>

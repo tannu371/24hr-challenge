@@ -16,13 +16,15 @@ from portfolio.formulation import (
 
 def _problem(seed: int = 0):
     u = make_universe(n_assets=8, n_sectors=3, seed=seed)
+    transaction_costs = np.zeros(u.n_assets, dtype=float)
+    transaction_costs[[0, 2, 6]] = 0.05
     return PortfolioProblem(
         universe=u, K_target=3,
         weights=ObjectiveWeights(
-            lam_return=1.0, lam_variance=2.0, lam_diversification=0.7,
-            lam_transaction=0.3, lam_cardinality=4.0, rho_threshold=0.5,
+            lam_return=1.0, lam_variance=2.0, P_K=4.0,
+            P_S=0.0, P_R=0.7, theta_risk=0.04,
         ),
-        x_prev=np.array([1, 0, 1, 0, 0, 0, 1, 0]),
+        transaction_costs=transaction_costs,
     )
 
 
@@ -75,8 +77,8 @@ def test_ising_pauli_offset_matches():
 
 
 def test_brute_force_optimum_lies_on_K_shell():
-    """With a sufficiently large lam_cardinality, the global optimum of the
-    *unconstrained* QUBO must coincide with the cardinality-K-shell optimum.
+    """With a sufficiently large P_K, the global optimum of the *unconstrained*
+    QUBO must coincide with the cardinality-K-shell optimum.
     """
     from portfolio.classical import brute_force, brute_force_full
 

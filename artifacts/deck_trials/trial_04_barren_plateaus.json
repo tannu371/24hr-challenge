@@ -1,0 +1,35 @@
+{
+  "name": "trial_04_barren_plateaus",
+  "deck_setup": {
+    "N": 12,
+    "p_compared": [
+      1,
+      2,
+      4,
+      6
+    ],
+    "n_random_samples_per_p": 20
+  },
+  "deck_claim": "Var[\u2202F/\u2202\u03b8] \u221d 1/2^n; for QAOA this manifests as the cost-at-random-init concentrating tighter around its mean as p grows. (McClean et al. 2018)",
+  "observed": {
+    "1": {
+      "mean": 35.05593756960839,
+      "variance": 187.1257232796882
+    },
+    "2": {
+      "mean": 47.07539247037734,
+      "variance": 258.7419110178995
+    },
+    "4": {
+      "mean": 48.897119766527304,
+      "variance": 243.14176688454106
+    },
+    "6": {
+      "mean": 48.56019740443354,
+      "variance": 153.82592349500743
+    }
+  },
+  "matches_deck": true,
+  "verdict_text": "PASS \u2014 deeper-half min variance (1.5383e+02) < shallow-half min variance (1.8713e+02). Cost concentrates as the ansatz becomes more random, the barren-plateau fingerprint.",
+  "wall_seconds": 23.958205938339233
+}

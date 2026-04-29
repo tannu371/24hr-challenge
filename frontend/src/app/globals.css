@@ -1,0 +1,125 @@
+@import "tailwindcss";
+
+/* Deck-aligned design tokens. Light mode is default; dark mode toggles via
+   the `.dark` class on <html>. */
+
+:root {
+  --background: #fbf8f3;
+  --background-alt: #f3eee3;
+  --foreground: #1a1a1a;
+  --muted: #6e6a64;
+  --border: #d8d2c4;
+  --card: #ffffff;
+  --gold: #b48a2c;
+  --gold-soft: #d8b25a;
+  --cyan: #1f8a8a;
+  --cyan-soft: #5fc3c3;
+  --accent: var(--gold);
+  --accent-2: var(--cyan);
+  --danger: #b34a3b;
+  --good: #3e8a52;
+}
+
+html.dark {
+  --background: #0d0e10;
+  --background-alt: #16181c;
+  --foreground: #efece4;
+  --muted: #8d8a82;
+  --border: #2a2c30;
+  --card: #15171b;
+  --gold: #d8b25a;
+  --gold-soft: #b48a2c;
+  --cyan: #5fc3c3;
+  --cyan-soft: #1f8a8a;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-background-alt: var(--background-alt);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-card: var(--card);
+  --color-gold: var(--gold);
+  --color-cyan: var(--cyan);
+  --color-accent: var(--accent);
+  --color-accent-2: var(--accent-2);
+  --color-danger: var(--danger);
+  --color-good: var(--good);
+  --font-sans: var(--font-plex), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, "SFMono-Regular", monospace;
+}
+
+* {
+  border-color: var(--border);
+}
+
+html, body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01", "ss02";
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, .display {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+}
+h1, .display.text-3xl, .display.text-5xl { font-weight: 700; letter-spacing: -0.035em; }
+h2, .display.text-lg, .display.text-2xl { font-weight: 600; letter-spacing: -0.02em; }
+
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px; border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--background-alt);
+  color: var(--foreground);
+  font-size: 13px; line-height: 1.2;
+  cursor: pointer; transition: all 0.12s ease;
+}
+.btn:hover { background: var(--card); border-color: var(--accent); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn.primary:hover { background: var(--gold-soft); border-color: var(--gold-soft); }
+.btn.cyan { background: var(--cyan); border-color: var(--cyan); color: #fff; }
+.btn.ghost { background: transparent; }
+
+.label-cap {
+  font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--muted); font-weight: 500;
+}
+
+input[type="range"] { accent-color: var(--accent); }
+
+table.tx { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.tx th, table.tx td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border); }
+table.tx th { color: var(--muted); font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; }
+table.tx tbody tr:hover { background: var(--background-alt); cursor: pointer; }
+
+.gauge-track { background: var(--background-alt); }
+.gauge-fill { background: linear-gradient(90deg, var(--cyan) 0%, var(--gold) 100%); }
+
+input[type="number"], input[type="text"], select, textarea {
+  background: var(--background); color: var(--foreground);
+  border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px;
+  font-size: 13px;
+}
+input[type="number"]:focus, input[type="text"]:focus, select:focus, textarea:focus {
+  outline: none; border-color: var(--accent);
+}
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+::-webkit-scrollbar-track { background: transparent; }

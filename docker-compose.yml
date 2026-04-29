@@ -1,0 +1,29 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: qportf-backend
+    ports:
+      - "8765:8765"
+    environment:
+      FRONTEND_ORIGIN: "http://localhost:3000"
+    env_file:
+      - backend/.env       # IBM_QUANTUM_TOKEN goes here; never commit
+    volumes:
+      - ./artifacts:/repo/artifacts
+      - ./backend/trials.db:/repo/backend/trials.db
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: qportf-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_BASE: "http://localhost:8765"
+    depends_on:
+      - backend
+    restart: unless-stopped

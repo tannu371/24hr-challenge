@@ -3,3 +3,27 @@ __pycache__/
 *.pyc
 .venv/
 .ipynb_checkpoints/
+
+# Secrets — never commit
+.env
+*.env
+!*.env.example
+backend/.env
+
+# Local databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Frontend
+node_modules/
+.next/
+frontend/.next/
+frontend/out/
+frontend/node_modules/
+frontend/.turbo/
+
+# Editor / OS
+.idea/
+.vscode/
+*.swp

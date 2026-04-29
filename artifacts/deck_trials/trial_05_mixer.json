@@ -1,0 +1,25 @@
+{
+  "name": "trial_05_mixer",
+  "deck_setup": {
+    "N": 10,
+    "K": 3,
+    "p": 2,
+    "off_shell_states": 904
+  },
+  "deck_claim": "X-mixer + uniform leaks substantial probability onto cardinality\u2260K. XY-ring + Dicke confines amplitude to the K-shell exactly.",
+  "observed": {
+    "x_mixer": {
+      "trial_id": 215,
+      "approx_ratio": 1.0,
+      "off_K_shell_probability": 0.0584327756908066
+    },
+    "xy_ring_dicke": {
+      "trial_id": 216,
+      "approx_ratio": 1.0,
+      "off_K_shell_probability": 0
+    }
+  },
+  "matches_deck": true,
+  "verdict_text": "PASS \u2014 XY-ring + Dicke off-shell mass \u2248 0 (0.00e+00); X-mixer leaks 0.058. Hamming-weight preservation is exact, as the deck claims.",
+  "wall_seconds": 16.40800404548645
+}

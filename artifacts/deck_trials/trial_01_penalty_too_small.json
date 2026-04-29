@@ -1,0 +1,28 @@
+{
+  "name": "trial_01_penalty_too_small",
+  "deck_setup_translated": {
+    "N": 8,
+    "K": 4,
+    "P_K_deck": 1,
+    "P_K_used": 0.0005,
+    "translation": "P_K_used \u2248 P_K_deck / K\u00b2 \u00b7 (obj-swing scale ratio)"
+  },
+  "deck_claim": "When P_K is too small to dominate the objective swing, QAOA returns a portfolio with cardinality \u2260 K (deck observed K=5/6 dominating top minima).",
+  "observed": {
+    "selected_K": 5,
+    "top_K_distribution": {
+      "6": 3,
+      "5": 5,
+      "4": 1,
+      "7": 1
+    },
+    "top_dominant_K": 6,
+    "energy_star": -0.15918790250483686,
+    "cost": -0.20988333226692016,
+    "approx_ratio": 1.0110946792736601,
+    "trial_id": 129
+  },
+  "matches_deck": true,
+  "verdict_text": "PASS \u2014 selected K=5 \u2260 4 under the deck-equivalent tiny P_K. Top-shell K distribution {6: 3, 5: 5, 4: 1, 7: 1} confirms the leakage.",
+  "wall_seconds": 4.505428791046143
+}
